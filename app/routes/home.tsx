@@ -1,13 +1,13 @@
 import type { Route } from "./+types/home";
-import { Welcome } from "../welcome/welcome";
+import { TbuPage } from "~/components/tbu-page";
 
 export function meta({}: Route.MetaArgs) {
   return [
-    { title: "New React Router App" },
-    { name: "description", content: "Welcome to React Router!" },
+    { title: "Home | MAROSA" },
+    { name: "description", content: "MAROSA coffee roasting management" },
   ];
 }
 
 export default function Home() {
-  return <Welcome />;
+  return <TbuPage title="Home" />;
 }

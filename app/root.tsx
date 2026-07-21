@@ -23,6 +23,14 @@ export const links: Route.LinksFunction = () => [
   },
 ];
 
+export const meta: Route.MetaFunction = () => [
+  { title: "MAROSA" },
+  {
+    name: "description",
+    content: "Coffee roasting recipes and production management.",
+  },
+];
+
 export function Layout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en">
