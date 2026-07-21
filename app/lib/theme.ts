@@ -4,25 +4,30 @@ export const marosaTheme = createTheme({
   palette: {
     mode: "light",
     primary: {
-      main: "#8a4b2b",
-      dark: "#66351e",
-      light: "#b97955",
-      contrastText: "#fffaf5",
+      main: "#3B8061",
+      dark: "#1A3A34",
+      light: "#5AAF87",
+      contrastText: "#FFFFFF",
     },
     secondary: {
-      main: "#c99b68",
-      contrastText: "#352117",
+      main: "#5AAF87",
+      dark: "#3B8061",
+      light: "#E7F5E8",
+      contrastText: "#1A3A34",
     },
     background: {
-      default: "#fbf8f3",
-      paper: "#ffffff",
+      default: "#F4F4F4",
+      paper: "#FFFFFF",
     },
     text: {
-      primary: "#352720",
-      secondary: "#74645c",
+      primary: "#1A3A34",
+      secondary: "#6B7280",
     },
-    divider: "#e7ddd4",
-    error: { main: "#b42318" },
+    divider: "#EEEEEE",
+    success: { main: "#3D8565", contrastText: "#FFFFFF" },
+    warning: { main: "#F59E0B", contrastText: "rgba(0,0,0,.87)" },
+    error: { main: "#E53935", contrastText: "#FFFFFF" },
+    info: { main: "#42A5F5", contrastText: "#FFFFFF" },
   },
   shape: { borderRadius: 12 },
   typography: {
@@ -39,9 +44,23 @@ export const marosaTheme = createTheme({
     },
     MuiCard: {
       defaultProps: { variant: "outlined" },
-      styleOverrides: { root: { borderColor: "#e7ddd4" } },
+      styleOverrides: { root: { borderColor: "#E0E0E0" } },
     },
     MuiTextField: { defaultProps: { size: "small" } },
     MuiFormControl: { defaultProps: { size: "small" } },
+    MuiOutlinedInput: {
+      styleOverrides: {
+        notchedOutline: { borderColor: "#E0E0E0" },
+        root: {
+          "&:hover .MuiOutlinedInput-notchedOutline": { borderColor: "#5AAF87" },
+          "&.Mui-focused .MuiOutlinedInput-notchedOutline": { borderColor: "#3B8061" },
+        },
+      },
+    },
+    MuiCssBaseline: {
+      styleOverrides: {
+        ":focus-visible": { outline: "3px solid rgba(0, 95, 204, .34)", outlineOffset: 2 },
+      },
+    },
   },
 });

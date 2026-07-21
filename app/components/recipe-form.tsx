@@ -110,7 +110,7 @@ export function RecipeForm({ initialValue = emptyRecipe, submitLabel, onSubmit, 
           <CardContent>
             <Stack spacing={2}>
               {value.components.map((component, index) => (
-                <Box key={index} sx={{ display: "grid", gridTemplateColumns: { xs: "1fr", sm: "1fr 150px auto" }, gap: 1.5, alignItems: "center", p: 2, border: 1, borderColor: "divider", borderRadius: 2, bgcolor: "rgba(138,75,43,.025)" }}>
+                <Box key={index} sx={{ display: "grid", gridTemplateColumns: { xs: "1fr", sm: "1fr 150px auto" }, gap: 1.5, alignItems: "center", p: 2, border: 1, borderColor: "divider", borderRadius: 2, bgcolor: "#FAFAFA" }}>
                   <FormControl>
                     <InputLabel id={`component-${index}-label`}>Component {index + 1}</InputLabel>
                     <Select labelId={`component-${index}-label`} label={`Component ${index + 1}`} value={component.bean} onChange={(event) => updateComponent(index, { bean: event.target.value })}>

@@ -51,7 +51,7 @@ export function AppShell({ children }: { children: ReactNode }) {
                     <Button
                       color={isActive ? "primary" : "inherit"}
                       startIcon={<Icon fontSize="small" />}
-                      sx={{ px: 1.75, bgcolor: isActive ? "rgba(138,75,43,.09)" : "transparent", color: isActive ? "primary.main" : "text.secondary" }}
+                      sx={{ px: 1.75, bgcolor: isActive ? "rgba(59,128,97,.10)" : "transparent", color: isActive ? "primary.main" : "text.secondary" }}
                     >
                       {label}
                     </Button>
@@ -78,7 +78,7 @@ export function AppShell({ children }: { children: ReactNode }) {
               {navigation.map(({ to, label, icon: Icon, end }) => (
                 <NavLink key={to} to={to} end={end} onClick={() => setMenuOpen(false)} style={{ textDecoration: "none" }}>
                   {({ isActive }) => (
-                    <Button fullWidth color={isActive ? "primary" : "inherit"} startIcon={<Icon />} sx={{ justifyContent: "flex-start", py: 1.25, color: isActive ? "primary.main" : "text.secondary", bgcolor: isActive ? "rgba(138,75,43,.09)" : "transparent" }}>
+                    <Button fullWidth color={isActive ? "primary" : "inherit"} startIcon={<Icon />} sx={{ justifyContent: "flex-start", py: 1.25, color: isActive ? "primary.main" : "text.secondary", bgcolor: isActive ? "rgba(59,128,97,.10)" : "transparent" }}>
                       {label}
                     </Button>
                   )}

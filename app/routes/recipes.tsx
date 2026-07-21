@@ -74,7 +74,7 @@ export default function RecipesPage() {
                   borderTop: index ? 1 : 0,
                   borderColor: "divider",
                   transition: "background-color .15s ease",
-                  "&:hover": { bgcolor: "rgba(138,75,43,.035)" },
+                  "&:hover": { bgcolor: "rgba(59,128,97,.045)" },
                 }}
               >
                 <Checkbox size="small" aria-label={`Select ${recipe.name}`} checked={selected.includes(recipe.id)} onChange={(event) => toggleRecipe(recipe.id, event.target.checked)} />
