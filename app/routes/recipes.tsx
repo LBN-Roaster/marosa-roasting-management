@@ -15,6 +15,7 @@ import IconButton from "@mui/material/IconButton";
 import Stack from "@mui/material/Stack";
 import Typography from "@mui/material/Typography";
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 import { Link } from "react-router";
 import { PageHeading } from "~/components/page-heading";
 import { useRecipes } from "~/contexts/recipe-context";
@@ -24,6 +25,7 @@ export function meta() {
 }
 
 export default function RecipesPage() {
+  const { t } = useTranslation(["recipes", "common"]);
   const { recipes, deleteRecipes } = useRecipes();
   const [selected, setSelected] = useState<string[]>([]);
   const [deleteOpen, setDeleteOpen] = useState(false);
@@ -41,21 +43,21 @@ export default function RecipesPage() {
   return (
     <>
       <PageHeading
-        title="Recipes"
-        description="Create and maintain the recipes used by your roasting team."
+        title={t("title")}
+        description={t("subtitle")}
         actions={
           <>
-            <Button component={Link} to="/recipes/new" variant="contained" startIcon={<AddIcon />}>Create recipe</Button>
+            <Button component={Link} to="/recipes/new" variant="contained" startIcon={<AddIcon />}>{t("common:actions.createRecipe")}</Button>
             <Button variant="outlined" color="inherit" disabled={!selected.length} startIcon={<DeleteOutlineIcon />} onClick={() => setDeleteOpen(true)}>
-              Delete selected{selected.length ? ` (${selected.length})` : ""}
+              {t("list.deleteSelected")}{selected.length ? ` (${selected.length})` : ""}
             </Button>
           </>
         }
       />
 
       <Stack direction="row" sx={{ mb: 1.5, justifyContent: "space-between", alignItems: "center" }}>
-        <Typography variant="subtitle2" sx={{ fontWeight: 700 }}>In use at LBN Coffee</Typography>
-        <Typography variant="caption" color="text.secondary">{recipes.length} recipes</Typography>
+        <Typography variant="subtitle2" sx={{ fontWeight: 700 }}>{t("inUseAt", { location: "LBN Coffee" })}</Typography>
+        <Typography variant="caption" color="text.secondary">{t("recipeCount", { count: recipes.length })}</Typography>
       </Stack>
 
       <Card sx={{ overflow: "hidden" }}>
@@ -77,39 +79,39 @@ export default function RecipesPage() {
                   "&:hover": { bgcolor: "rgba(59,128,97,.045)" },
                 }}
               >
-                <Checkbox size="small" aria-label={`Select ${recipe.name}`} checked={selected.includes(recipe.id)} onChange={(event) => toggleRecipe(recipe.id, event.target.checked)} />
+                <Checkbox size="small" slotProps={{ input: { "aria-label": recipe.name } }} checked={selected.includes(recipe.id)} onChange={(event) => toggleRecipe(recipe.id, event.target.checked)} />
                 <Box component={Link} to={`/recipes/${recipe.id}`} sx={{ minWidth: 0, color: "inherit", textDecoration: "none" }}>
                   <Stack direction={{ xs: "column", sm: "row" }} sx={{ justifyContent: "space-between", alignItems: { sm: "center" }, gap: { xs: 0.5, sm: 3 } }}>
                     <Box>
                       <Typography variant="body1" sx={{ fontWeight: 650, "&:hover": { color: "primary.main" } }}>{recipe.name}</Typography>
-                      <Typography variant="caption" color="text.secondary">{recipe.isBlend ? "Blend" : "Single origin"} · {recipe.roastCount} roasts</Typography>
+                      <Typography variant="caption" color="text.secondary">{recipe.isBlend ? t("type.blend") : t("type.single")} · {t("roastCount", { count: recipe.roastCount })}</Typography>
                     </Box>
                     <Typography variant="body2" color="text.secondary" noWrap sx={{ maxWidth: { sm: "48%" }, textAlign: { sm: "right" } }}>
                       {recipe.components.map((component) => `${component.bean} ${component.percentage}%`).join(" · ")}
                     </Typography>
                   </Stack>
                 </Box>
-                <IconButton component={Link} to={`/recipes/${recipe.id}`} size="small" aria-label={`View ${recipe.name}`}><ChevronRightIcon /></IconButton>
+                <IconButton component={Link} to={`/recipes/${recipe.id}`} size="small" aria-label={t("common:actions.view", { name: recipe.name })}><ChevronRightIcon /></IconButton>
               </Box>
             ))}
           </Box>
         ) : (
           <CardContent>
             <Stack sx={{ minHeight: 220, alignItems: "center", justifyContent: "center", textAlign: "center" }}>
-              <Typography sx={{ fontWeight: 700 }}>No recipes yet</Typography>
-              <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>Create your first recipe to get started.</Typography>
-              <Button component={Link} to="/recipes/new" variant="contained" size="small" startIcon={<AddIcon />} sx={{ mt: 2 }}>Create recipe</Button>
+              <Typography sx={{ fontWeight: 700 }}>{t("list.emptyTitle")}</Typography>
+              <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>{t("list.emptyDescription")}</Typography>
+              <Button component={Link} to="/recipes/new" variant="contained" size="small" startIcon={<AddIcon />} sx={{ mt: 2 }}>{t("common:actions.createRecipe")}</Button>
             </Stack>
           </CardContent>
         )}
       </Card>
 
       <Dialog open={deleteOpen} onClose={() => setDeleteOpen(false)}>
-        <DialogTitle>Delete selected recipes?</DialogTitle>
-        <DialogContent><DialogContentText>This will remove {selected.length} recipe{selected.length === 1 ? "" : "s"} from this device. This action cannot be undone.</DialogContentText></DialogContent>
+        <DialogTitle>{t("list.deleteTitle")}</DialogTitle>
+        <DialogContent><DialogContentText>{t("list.deleteDescription", { count: selected.length })}</DialogContentText></DialogContent>
         <DialogActions>
-          <Button color="inherit" onClick={() => setDeleteOpen(false)}>Cancel</Button>
-          <Button color="error" variant="contained" onClick={confirmDelete}>Delete</Button>
+          <Button color="inherit" onClick={() => setDeleteOpen(false)}>{t("common:actions.cancel")}</Button>
+          <Button color="error" variant="contained" onClick={confirmDelete}>{t("common:actions.delete")}</Button>
         </DialogActions>
       </Dialog>
     </>

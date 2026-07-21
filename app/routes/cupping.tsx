@@ -5,5 +5,5 @@ export function meta() {
 }
 
 export default function CuppingPage() {
-  return <TbuPage title="Cupping" />;
+  return <TbuPage titleKey="cupping" />;
 }

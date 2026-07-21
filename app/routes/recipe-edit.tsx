@@ -1,4 +1,5 @@
 import { Navigate, useNavigate, useParams } from "react-router";
+import { useTranslation } from "react-i18next";
 import { PageHeading } from "~/components/page-heading";
 import { RecipeForm } from "~/components/recipe-form";
 import { useRecipes } from "~/contexts/recipe-context";
@@ -8,6 +9,7 @@ export function meta() {
 }
 
 export default function EditRecipePage() {
+  const { t } = useTranslation(["recipes", "common"]);
   const { recipeId } = useParams();
   const navigate = useNavigate();
   const { recipes, updateRecipe } = useRecipes();
@@ -18,10 +20,10 @@ export default function EditRecipePage() {
   const { id: _id, roastCount: _roastCount, ...initialValue } = recipe;
   return (
     <>
-      <PageHeading title={`Edit ${recipe.name}`} description="Update recipe details and bean composition." />
+      <PageHeading title={t("edit.title", { name: recipe.name })} description={t("edit.description")} />
       <RecipeForm
         initialValue={initialValue}
-        submitLabel="Save changes"
+        submitLabel={t("common:actions.saveChanges")}
         onCancel={() => navigate(`/recipes/${recipeId}`)}
         onSubmit={(value) => {
           updateRecipe(recipeId, value);

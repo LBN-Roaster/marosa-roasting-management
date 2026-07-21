@@ -16,6 +16,7 @@ import LinearProgress from "@mui/material/LinearProgress";
 import Stack from "@mui/material/Stack";
 import Typography from "@mui/material/Typography";
 import { useState, type ReactNode } from "react";
+import { useTranslation } from "react-i18next";
 import { Link, Navigate, useNavigate, useParams } from "react-router";
 import { PageHeading } from "~/components/page-heading";
 import { useRecipes } from "~/contexts/recipe-context";
@@ -34,6 +35,7 @@ function Detail({ label, children }: { label: string; children: ReactNode }) {
 }
 
 export default function RecipeDetailPage() {
+  const { t, i18n } = useTranslation(["recipes", "common"]);
   const { recipeId } = useParams();
   const navigate = useNavigate();
   const { recipes, deleteRecipes } = useRecipes();
@@ -49,34 +51,38 @@ export default function RecipeDetailPage() {
 
   return (
     <>
-      <Button component={Link} to="/recipes" color="inherit" startIcon={<ArrowBackIcon />} sx={{ mb: 2, ml: -1 }}>All recipes</Button>
+      <Button component={Link} to="/recipes" color="inherit" startIcon={<ArrowBackIcon />} sx={{ mb: 2, ml: -1 }}>{t("common:actions.allRecipes")}</Button>
       <PageHeading
         title={recipe.name}
-        description={recipe.description || "No description has been added."}
+        description={recipe.description || t("detail.noDescription")}
         actions={
           <>
-            <Button component={Link} to={`/recipes/${recipe.id}/edit`} variant="contained" startIcon={<EditOutlinedIcon />}>Edit</Button>
-            <Button variant="outlined" color="inherit" startIcon={<DeleteOutlineIcon />} onClick={() => setDeleteOpen(true)}>Delete</Button>
+            <Button component={Link} to={`/recipes/${recipe.id}/edit`} variant="contained" startIcon={<EditOutlinedIcon />}>{t("common:actions.edit")}</Button>
+            <Button variant="outlined" color="inherit" startIcon={<DeleteOutlineIcon />} onClick={() => setDeleteOpen(true)}>{t("common:actions.delete")}</Button>
           </>
         }
       />
 
       <Box sx={{ display: "grid", gridTemplateColumns: { xs: "1fr", lg: "1.15fr .85fr" }, gap: 3 }}>
         <Card>
-          <CardHeader title="Recipe details" slotProps={{ title: { variant: "h6" } }} />
+          <CardHeader title={t("detail.recipeDetails")} slotProps={{ title: { variant: "h6" } }} />
           <Divider />
           <CardContent component="dl" sx={{ display: "grid", gridTemplateColumns: { xs: "1fr", sm: "1fr 1fr" }, gap: 3 }}>
-            <Detail label="Name">{recipe.name}</Detail>
-            <Detail label="Number of roasts"><Box component="span" sx={{ color: "primary.main" }}>{recipe.roastCount}</Box></Detail>
-            <Detail label="Location">{recipe.location}</Detail>
-            <Detail label="Recipe type">{recipe.isBlend ? "Blend" : "Single origin"}</Detail>
-            <Detail label="Shrinkage">{recipe.shrinkage == null ? "—" : `${recipe.shrinkage}%`}</Detail>
-            <Detail label="Price">{recipe.price == null ? "—" : `$${recipe.price.toFixed(2)} / kg`}</Detail>
+            <Detail label={t("detail.name")}>{recipe.name}</Detail>
+            <Detail label={t("detail.numberOfRoasts")}><Box component="span" sx={{ color: "primary.main" }}>{recipe.roastCount}</Box></Detail>
+            <Detail label={t("detail.location")}>{recipe.location}</Detail>
+            <Detail label={t("detail.recipeType")}>{recipe.isBlend ? t("type.blend") : t("type.single")}</Detail>
+            <Detail label={t("detail.shrinkage")}>{recipe.shrinkage == null ? "—" : `${recipe.shrinkage}%`}</Detail>
+            <Detail label={t("detail.price")}>
+              {recipe.price == null
+                ? "—"
+                : `${new Intl.NumberFormat(i18n.resolvedLanguage === "vi" ? "vi-VN" : "en-US", { style: "currency", currency: "USD" }).format(recipe.price)} / kg`}
+            </Detail>
           </CardContent>
         </Card>
 
         <Card>
-          <CardHeader title="Bean composition" slotProps={{ title: { variant: "h6" } }} />
+          <CardHeader title={t("detail.beanComposition")} slotProps={{ title: { variant: "h6" } }} />
           <Divider />
           <CardContent>
             <Stack spacing={2.5}>
@@ -95,11 +101,11 @@ export default function RecipeDetailPage() {
       </Box>
 
       <Dialog open={deleteOpen} onClose={() => setDeleteOpen(false)}>
-        <DialogTitle>Delete “{recipe.name}”?</DialogTitle>
-        <DialogContent><DialogContentText>This recipe will be removed from this device. This action cannot be undone.</DialogContentText></DialogContent>
+        <DialogTitle>{t("detail.deleteTitle", { name: recipe.name })}</DialogTitle>
+        <DialogContent><DialogContentText>{t("detail.deleteDescription")}</DialogContentText></DialogContent>
         <DialogActions>
-          <Button color="inherit" onClick={() => setDeleteOpen(false)}>Cancel</Button>
-          <Button color="error" variant="contained" onClick={confirmDelete}>Delete</Button>
+          <Button color="inherit" onClick={() => setDeleteOpen(false)}>{t("common:actions.cancel")}</Button>
+          <Button color="error" variant="contained" onClick={confirmDelete}>{t("common:actions.delete")}</Button>
         </DialogActions>
       </Dialog>
     </>

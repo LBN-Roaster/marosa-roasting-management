@@ -5,5 +5,5 @@ export function meta() {
 }
 
 export default function SettingsPage() {
-  return <TbuPage title="Settings" />;
+  return <TbuPage titleKey="settings" />;
 }
