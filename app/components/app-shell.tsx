@@ -22,7 +22,7 @@ import { useTranslation } from "react-i18next";
 import { NavLink } from "react-router";
 
 const navigation = [
-  { to: "/", labelKey: "navigation.home", icon: InboxOutlinedIcon, end: true },
+  { to: "/app", labelKey: "navigation.home", icon: InboxOutlinedIcon, end: true },
   { to: "/recipes", labelKey: "navigation.recipes", icon: BookOutlinedIcon },
   { to: "/cupping", labelKey: "navigation.cupping", icon: ScienceOutlinedIcon },
   { to: "/settings", labelKey: "navigation.settings", icon: SettingsOutlinedIcon },
@@ -54,7 +54,7 @@ export function AppShell({ children }: { children: ReactNode }) {
       >
         <Container maxWidth="lg" disableGutters>
           <Toolbar sx={{ minHeight: "64px!important", px: { xs: 2, sm: 3 } }}>
-            <Box component={NavLink} to="/" onClick={() => setMenuOpen(false)} sx={{ mr: { md: 5 }, display: "flex", alignItems: "center", gap: 1.25, color: "text.primary", textDecoration: "none" }}>
+            <Box component={NavLink} to="/app" onClick={() => setMenuOpen(false)} sx={{ mr: { md: 5 }, display: "flex", alignItems: "center", gap: 1.25, color: "text.primary", textDecoration: "none" }}>
               <Avatar variant="rounded" sx={{ width: 36, height: 36, bgcolor: "primary.main", borderRadius: 2.5 }}>
                 <CoffeeIcon fontSize="small" />
               </Avatar>

@@ -1,8 +1,12 @@
 import { type RouteConfig, index, layout, route } from "@react-router/dev/routes";
 
 export default [
+  layout("routes/public-layout.tsx", [
+    index("routes/landing.tsx"),
+    route("login", "routes/login.tsx"),
+  ]),
   layout("routes/app-layout.tsx", [
-    index("routes/home.tsx"),
+    route("app", "routes/home.tsx"),
     route("roasts/:roastId", "routes/roast-detail.tsx"),
     route("recipes", "routes/recipes.tsx"),
     route("recipes/new", "routes/recipe-new.tsx"),

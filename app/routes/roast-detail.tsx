@@ -58,7 +58,7 @@ export default function RoastDetailPage() {
   const [deleteOpen, setDeleteOpen] = useState(false);
   const roast = roasts.find((item) => item.id === roastId);
 
-  if (!roast || !roastId) return <Navigate to="/" replace />;
+  if (!roast || !roastId) return <Navigate to="/app" replace />;
 
   const locale = i18n.resolvedLanguage === "vi" ? "vi-VN" : "en-AU";
   const shrinkage = ((roast.startingMassKg - roast.endingMassKg) / roast.startingMassKg) * 100;
@@ -82,12 +82,12 @@ export default function RoastDetailPage() {
 
   function confirmDelete() {
     deleteRoasts([roastId!]);
-    navigate("/");
+    navigate("/app");
   }
 
   return (
     <>
-      <Button component={Link} to="/" color="inherit" startIcon={<ArrowBackIcon />} sx={{ mb: 2, ml: -1 }}>{t("back")}</Button>
+      <Button component={Link} to="/app" color="inherit" startIcon={<ArrowBackIcon />} sx={{ mb: 2, ml: -1 }}>{t("back")}</Button>
 
       <Stack direction={{ xs: "column", md: "row" }} sx={{ mb: 3.5, justifyContent: "space-between", alignItems: { md: "flex-end" }, gap: 2 }}>
         <Box>
