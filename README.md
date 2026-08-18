@@ -34,6 +34,24 @@ npm run dev
 
 Your application will be available at `http://localhost:5173`.
 
+### Google authentication
+
+Configure the Google OAuth client, public app URL, and a long random session
+secret. Marosa uses the Demo backend at `http://localhost:8080` by default.
+Set `BACKEND_API_URL` only when the Demo backend is hosted elsewhere. In Google
+Cloud, register this authorized redirect URI:
+
+```text
+http://localhost:5173/auth/google/callback
+```
+
+Production must use the same callback path on the public `APP_URL`. The backend
+must expose the same endpoints used by the Commerce app:
+
+- `POST /api/auth/google/check` with `{ "email": "..." }`
+- `POST /api/auth/google` with `{ "idToken": "..." }`, returning
+  `{ "token": "..." }`
+
 ## Building for Production
 
 Create a production build:

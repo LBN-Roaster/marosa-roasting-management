@@ -5,6 +5,12 @@ import { AppShell } from "~/components/app-shell";
 import { RecipeProvider } from "~/contexts/recipe-context";
 import { RoastProvider } from "~/contexts/roast-context";
 import { marosaTheme } from "~/lib/theme";
+import { requireUser } from "~/lib/auth.server";
+import type { Route } from "./+types/app-layout";
+
+export async function loader({ request }: Route.LoaderArgs) {
+  return { user: await requireUser(request) };
+}
 
 export default function AppLayout() {
   return (

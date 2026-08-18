@@ -1,6 +1,4 @@
-import CoffeeIcon from "@mui/icons-material/Coffee";
 import TranslateIcon from "@mui/icons-material/Translate";
-import Avatar from "@mui/material/Avatar";
 import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
 import Container from "@mui/material/Container";
@@ -31,10 +29,8 @@ export function PublicHeader({ compact = false }: { compact?: boolean }) {
     <Box component="header" sx={{ py: 2 }}>
       <Container maxWidth="lg">
         <Stack direction="row" sx={{ alignItems: "center" }}>
-          <Stack component={Link} to="/" direction="row" spacing={1.25} sx={{ alignItems: "center", color: "text.primary", textDecoration: "none" }}>
-            <Avatar variant="rounded" sx={{ width: 36, height: 36, bgcolor: "primary.main", borderRadius: 2.5 }}>
-              <CoffeeIcon fontSize="small" />
-            </Avatar>
+          <Stack component={Link} to="/" direction="row" spacing={1.25} aria-label="MAROSA" sx={{ alignItems: "center", color: "text.primary", textDecoration: "none" }}>
+            <Box component="img" src="/icon.png" alt="" sx={{ width: 36, height: 36, objectFit: "contain" }} />
             <Typography sx={{ display: { xs: "none", sm: "block" }, fontWeight: 800, letterSpacing: ".16em" }}>MAROSA</Typography>
           </Stack>
 

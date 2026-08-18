@@ -4,6 +4,8 @@ export default [
   layout("routes/public-layout.tsx", [
     index("routes/landing.tsx"),
     route("login", "routes/login.tsx"),
+    route("auth/google", "routes/auth-google.ts"),
+    route("auth/google/callback", "routes/auth-google-callback.ts"),
   ]),
   layout("routes/app-layout.tsx", [
     route("app", "routes/home.tsx"),

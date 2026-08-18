@@ -1,6 +1,5 @@
 import BookOutlinedIcon from "@mui/icons-material/BookOutlined";
 import CloseIcon from "@mui/icons-material/Close";
-import CoffeeIcon from "@mui/icons-material/Coffee";
 import InboxOutlinedIcon from "@mui/icons-material/InboxOutlined";
 import MenuIcon from "@mui/icons-material/Menu";
 import ScienceOutlinedIcon from "@mui/icons-material/ScienceOutlined";
@@ -54,10 +53,8 @@ export function AppShell({ children }: { children: ReactNode }) {
       >
         <Container maxWidth="lg" disableGutters>
           <Toolbar sx={{ minHeight: "64px!important", px: { xs: 2, sm: 3 } }}>
-            <Box component={NavLink} to="/app" onClick={() => setMenuOpen(false)} sx={{ mr: { md: 5 }, display: "flex", alignItems: "center", gap: 1.25, color: "text.primary", textDecoration: "none" }}>
-              <Avatar variant="rounded" sx={{ width: 36, height: 36, bgcolor: "primary.main", borderRadius: 2.5 }}>
-                <CoffeeIcon fontSize="small" />
-              </Avatar>
+            <Box component={NavLink} to="/app" onClick={() => setMenuOpen(false)} aria-label="MAROSA" sx={{ mr: { md: 5 }, display: "flex", alignItems: "center", gap: 1.25, color: "text.primary", textDecoration: "none" }}>
+              <Box component="img" src="/icon.png" alt="" sx={{ width: 36, height: 36, objectFit: "contain" }} />
               <Typography sx={{ fontWeight: 800, letterSpacing: ".16em" }}>MAROSA</Typography>
             </Box>
 
