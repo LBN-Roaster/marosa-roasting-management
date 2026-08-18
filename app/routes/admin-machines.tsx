@@ -21,6 +21,7 @@ import { Suspense, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Await, useLoaderData, useNavigate, useSearchParams } from "react-router";
 import { AdminShell } from "~/components/admin-shell";
+import { PageHeading } from "~/components/page-heading";
 import {
   getAdminMachines,
   type AdminMachine,
@@ -190,23 +191,15 @@ export default function AdminMachinesPage() {
   }
 
   return (
-    <AdminShell>
-      <Stack spacing={3}>
-        <Box>
-          <Typography variant="h4" component="h1">
-            {t("admin.title")}
-          </Typography>
-          <Typography color="text.secondary" sx={{ mt: 0.75 }}>
-            {t("admin.subtitle")}
-          </Typography>
-        </Box>
-
-        <Card>
-          <Stack
-            direction={{ xs: "column", sm: "row" }}
-            spacing={1.5}
-            sx={{ p: 2, borderBottom: 1, borderColor: "divider" }}
-          >
+    <AdminShell
+      header={<PageHeading title={t("admin.title")} description={t("admin.subtitle")} />}
+    >
+      <Card>
+        <Stack
+          direction={{ xs: "column", sm: "row" }}
+          spacing={1.5}
+          sx={{ p: 2, borderBottom: 1, borderColor: "divider" }}
+        >
             <TextField
               fullWidth
               value={search}
@@ -251,8 +244,7 @@ export default function AdminMachinesPage() {
               )}
             </Await>
           </Suspense>
-        </Card>
-      </Stack>
+      </Card>
     </AdminShell>
   );
 }

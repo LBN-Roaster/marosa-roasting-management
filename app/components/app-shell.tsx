@@ -21,7 +21,7 @@ import Toolbar from "@mui/material/Toolbar";
 import Typography from "@mui/material/Typography";
 import { useState, type MouseEvent, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
-import { Form, NavLink, useLocation, useRouteLoaderData } from "react-router";
+import { Form, NavLink, useRouteLoaderData } from "react-router";
 import type { GoogleUser } from "~/lib/auth.server";
 
 const navigation = [
@@ -47,7 +47,6 @@ function userInitials(user: GoogleUser | undefined) {
 
 export function AppShell({ children }: { children: ReactNode }) {
   const { t, i18n } = useTranslation("common");
-  const location = useLocation();
   const appLayoutData = useRouteLoaderData("routes/app-layout") as
     | { user: GoogleUser }
     | undefined;
@@ -55,7 +54,6 @@ export function AppShell({ children }: { children: ReactNode }) {
   const visibleNavigation = navigation.filter(
     (item) => !item.adminOnly || user?.role === "ADMIN",
   );
-  const isAdmin = location.pathname.startsWith("/admin");
   const [menuOpen, setMenuOpen] = useState(false);
   const [languageAnchor, setLanguageAnchor] = useState<HTMLElement | null>(null);
   const [accountAnchor, setAccountAnchor] = useState<HTMLElement | null>(null);
@@ -217,7 +215,7 @@ export function AppShell({ children }: { children: ReactNode }) {
         </Form>
       </Menu>
 
-      <Container component="main" maxWidth={isAdmin ? "xl" : "lg"} sx={{ py: { xs: 4, sm: 5 }, px: { xs: 2, sm: 3 } }}>
+      <Container component="main" maxWidth="lg" sx={{ py: { xs: 4, sm: 5 }, px: { xs: 2, sm: 3 } }}>
         {children}
       </Container>
     </Box>
