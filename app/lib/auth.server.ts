@@ -5,11 +5,14 @@ import {
   type Session,
 } from "react-router";
 
-type GoogleUser = {
+export type UserRole = "USER" | "ADMIN";
+
+export type GoogleUser = {
   sub: string;
   email: string;
   name?: string;
   picture?: string;
+  role: UserRole;
 };
 
 type AuthSessionData = {
@@ -66,7 +69,7 @@ function safeReturnTo(value: string | null) {
   return value;
 }
 
-function decodeGoogleUser(idToken: string): GoogleUser {
+function decodeGoogleUser(idToken: string): Omit<GoogleUser, "role"> {
   const payload = idToken.split(".")[1];
   if (!payload) {
     throw new Error("Google returned an invalid ID token.");
@@ -98,14 +101,36 @@ export async function getAuthSession(request: Request) {
 
 export async function requireUser(request: Request) {
   const session = await getAuthSession(request);
-  if (!session.has("backendToken")) {
+  const user = session.get("user");
+  if (
+    !session.has("backendToken") ||
+    !user ||
+    (user.role !== "USER" && user.role !== "ADMIN")
+  ) {
     const url = new URL(request.url);
     const callbackUrl = `${url.pathname}${url.search}`;
     throw redirect(
       `/login?callbackUrl=${encodeURIComponent(callbackUrl)}`,
     );
   }
-  return session.get("user");
+  return user;
+}
+
+export async function requireAdmin(request: Request) {
+  const user = await requireUser(request);
+  if (user.role !== "ADMIN") {
+    throw redirect("/app");
+  }
+  return user;
+}
+
+export async function logout(request: Request) {
+  const session = await getAuthSession(request);
+  throw redirect("/login", {
+    headers: {
+      "Set-Cookie": await getSessionStorage().destroySession(session),
+    },
+  });
 }
 
 export async function startGoogleLogin(request: Request) {
@@ -213,8 +238,13 @@ export async function finishGoogleLogin(request: Request) {
       email?: string;
       name?: string;
       picture?: string;
+      role?: UserRole;
     };
-    if (!backendSession.token || !backendSession.email) {
+    if (
+      !backendSession.token ||
+      !backendSession.email ||
+      (backendSession.role !== "USER" && backendSession.role !== "ADMIN")
+    ) {
       return redirectWithError(session, "missing_backend_token");
     }
 
@@ -227,6 +257,7 @@ export async function finishGoogleLogin(request: Request) {
       email: backendSession.email,
       name: backendSession.name,
       picture: backendSession.picture,
+      role: backendSession.role,
     });
 
     throw redirect(returnTo, {
