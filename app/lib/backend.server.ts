@@ -45,11 +45,31 @@ export type PageResponse<T> = {
   hasPrevious: boolean;
 };
 
-export type PageParams = { page?: number; size?: number };
+export type PageParams = {
+  page?: number;
+  size?: number;
+  sort?: string;
+  direction?: "asc" | "desc";
+};
 
 export type AdminMachineDetail = {
   machine: AdminMachine;
   logs: PageResponse<MachineLog>;
+};
+
+export type MachineApiKeyCreated = {
+  keyId: string;
+  token: string;
+  expiresAt: string | null;
+  createdAt: string;
+};
+
+export type MachineApiKeySummary = {
+  keyId: string;
+  keyPrefix: string;
+  expiresAt: string | null;
+  lastUsedAt: string | null;
+  createdAt: string;
 };
 
 export type AlogProfilePoint = {
@@ -85,7 +105,11 @@ function backendOrigin() {
   );
 }
 
-async function backendJson<T>(request: Request, path: string): Promise<T> {
+async function backendRequest<T>(
+  request: Request,
+  path: string,
+  init?: RequestInit,
+): Promise<T> {
   const session = await getAuthSession(request);
   const token = session.get("backendToken");
   if (!token) throw redirect("/login");
@@ -93,7 +117,11 @@ async function backendJson<T>(request: Request, path: string): Promise<T> {
   let response: Response;
   try {
     response = await fetch(`${backendOrigin()}${path}`, {
-      headers: { Authorization: `Bearer ${token}` },
+      ...init,
+      headers: {
+        ...init?.headers,
+        Authorization: `Bearer ${token}`,
+      },
     });
   } catch {
     throw new Response("The backend service is unavailable.", { status: 503 });
@@ -111,13 +139,21 @@ async function backendJson<T>(request: Request, path: string): Promise<T> {
   if (!response.ok) {
     throw new Response("The backend request failed.", { status: response.status });
   }
+  if (response.status === 204) return undefined as T;
   return response.json() as Promise<T>;
+}
+
+function backendJson<T>(request: Request, path: string): Promise<T> {
+  return backendRequest<T>(request, path);
 }
 
 function pageQuery(params?: PageParams) {
   const search = new URLSearchParams();
   if (params?.page != null) search.set("page", String(params.page));
   if (params?.size != null) search.set("size", String(params.size));
+  if (params?.sort) {
+    search.set("sort", `${params.sort},${params.direction ?? "asc"}`);
+  }
   const query = search.toString();
   return query ? `?${query}` : "";
 }
@@ -137,6 +173,33 @@ export function getAdminMachine(
   return backendJson<AdminMachineDetail>(
     request,
     `/api/admin/machines/${encodeURIComponent(machineId)}${pageQuery(params)}`,
+  );
+}
+
+export function issueMachineApiKey(request: Request, machineId: string) {
+  return backendRequest<MachineApiKeyCreated>(
+    request,
+    `/api/machines/${encodeURIComponent(machineId)}/api-keys`,
+    { method: "POST" },
+  );
+}
+
+export function listMachineApiKeys(request: Request, machineId: string) {
+  return backendRequest<MachineApiKeySummary[]>(
+    request,
+    `/api/machines/${encodeURIComponent(machineId)}/api-keys`,
+  );
+}
+
+export function revokeMachineApiKey(
+  request: Request,
+  machineId: string,
+  keyId: string,
+) {
+  return backendRequest<void>(
+    request,
+    `/api/machines/${encodeURIComponent(machineId)}/api-keys/${encodeURIComponent(keyId)}`,
+    { method: "DELETE" },
   );
 }
 

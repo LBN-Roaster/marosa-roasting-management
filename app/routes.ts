@@ -25,6 +25,10 @@ export default [
       route("admin", "routes/admin-machines.tsx"),
       route("admin/machines/:machineId", "routes/admin-machine-detail.tsx"),
       route(
+        "admin/machines/:machineId/api-keys",
+        "routes/admin-machine-api-keys.ts",
+      ),
+      route(
         "admin/machines/:machineId/logs/:uploadId",
         "routes/admin-machine-log.tsx",
       ),
