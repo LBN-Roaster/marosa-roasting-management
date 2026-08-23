@@ -50,6 +50,7 @@ export type PageParams = {
   size?: number;
   sort?: string;
   direction?: "asc" | "desc";
+  status?: string;
 };
 
 export type AdminMachineDetail = {
@@ -154,6 +155,7 @@ function pageQuery(params?: PageParams) {
   if (params?.sort) {
     search.set("sort", `${params.sort},${params.direction ?? "asc"}`);
   }
+  if (params?.status) search.set("status", params.status);
   const query = search.toString();
   return query ? `?${query}` : "";
 }

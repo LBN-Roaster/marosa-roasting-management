@@ -5,6 +5,10 @@ import Button from "@mui/material/Button";
 import Card from "@mui/material/Card";
 import CardContent from "@mui/material/CardContent";
 import Chip from "@mui/material/Chip";
+import FormControl from "@mui/material/FormControl";
+import InputLabel from "@mui/material/InputLabel";
+import MenuItem from "@mui/material/MenuItem";
+import Select from "@mui/material/Select";
 import Skeleton from "@mui/material/Skeleton";
 import Stack from "@mui/material/Stack";
 import Table from "@mui/material/Table";
@@ -14,6 +18,7 @@ import TableContainer from "@mui/material/TableContainer";
 import TableHead from "@mui/material/TableHead";
 import TablePagination from "@mui/material/TablePagination";
 import TableRow from "@mui/material/TableRow";
+import TableSortLabel from "@mui/material/TableSortLabel";
 import Typography from "@mui/material/Typography";
 import { Suspense } from "react";
 import { useTranslation } from "react-i18next";
@@ -33,6 +38,28 @@ import {
 } from "~/lib/backend.server";
 import type { Route } from "./+types/admin-machine-detail";
 
+const uploadStatuses: RoastUploadStatus[] = [
+  "PENDING",
+  "UPLOADED",
+  "PROCESSING",
+  "PROCESSED",
+  "FAILED",
+];
+
+type LogStatusFilter = RoastUploadStatus | "all";
+type LogSortField = "roastedAt" | "uploadedAt";
+type SortDirection = "asc" | "desc";
+
+function logStatusFilter(value: string | null): LogStatusFilter {
+  return uploadStatuses.includes(value as RoastUploadStatus)
+    ? (value as RoastUploadStatus)
+    : "all";
+}
+
+function logSortField(value: string | null): LogSortField {
+  return value === "uploadedAt" ? "uploadedAt" : "roastedAt";
+}
+
 export function meta() {
   return [{ title: "Machine | MAROSA" }];
 }
@@ -44,7 +71,22 @@ export async function loader({ request, params }: Route.LoaderArgs) {
   const url = new URL(request.url);
   const page = Number(url.searchParams.get("page") ?? "0");
   const size = Number(url.searchParams.get("size") ?? "20");
-  return { detail: getAdminMachine(request, params.machineId, { page, size }) };
+  const status = logStatusFilter(url.searchParams.get("status"));
+  const sortBy = logSortField(url.searchParams.get("sortBy"));
+  const direction: SortDirection =
+    url.searchParams.get("direction") === "asc" ? "asc" : "desc";
+  return {
+    detail: getAdminMachine(request, params.machineId, {
+      page,
+      size,
+      status: status === "all" ? undefined : status,
+      sort: sortBy,
+      direction,
+    }),
+    status,
+    sortBy,
+    direction,
+  };
 }
 
 function formatDate(value: string | null, locale: string) {
@@ -133,7 +175,17 @@ function LogsCardSkeleton() {
   );
 }
 
-function LogsCard({ detail }: { detail: AdminMachineDetail }) {
+function LogsCard({
+  detail,
+  status,
+  sortBy,
+  direction,
+}: {
+  detail: AdminMachineDetail;
+  status: LogStatusFilter;
+  sortBy: LogSortField;
+  direction: SortDirection;
+}) {
   const { machine, logs } = detail;
   const { t, i18n } = useTranslation("common");
   const navigate = useNavigate();
@@ -161,13 +213,80 @@ function LogsCard({ detail }: { detail: AdminMachineDetail }) {
     );
   }
 
+  function changeStatus(nextStatus: LogStatusFilter) {
+    setSearchParams(
+      (prev) => {
+        if (nextStatus === "all") {
+          prev.delete("status");
+        } else {
+          prev.set("status", nextStatus);
+        }
+        prev.set("page", "0");
+        return prev;
+      },
+      { preventScrollReset: true },
+    );
+  }
+
+  function changeSort(field: LogSortField) {
+    const nextDirection: SortDirection =
+      sortBy === field && direction === "desc" ? "asc" : "desc";
+    setSearchParams(
+      (prev) => {
+        prev.set("sortBy", field);
+        prev.set("direction", nextDirection);
+        prev.set("page", "0");
+        return prev;
+      },
+      { preventScrollReset: true },
+    );
+  }
+
+  function sortableHeader(field: LogSortField, label: string) {
+    return (
+      <TableSortLabel
+        active={sortBy === field}
+        direction={sortBy === field ? direction : "desc"}
+        onClick={() => changeSort(field)}
+      >
+        {label}
+      </TableSortLabel>
+    );
+  }
+
   return (
     <Card sx={expandedTableCardSx}>
       <CardContent sx={{ borderBottom: 1, borderColor: "divider" }}>
-        <Typography variant="h6">{t("admin.uploadedLogs")}</Typography>
-        <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
-          {t("admin.uploadedLogsDescription")}
-        </Typography>
+        <Stack
+          direction={{ xs: "column", sm: "row" }}
+          spacing={2}
+          sx={{ justifyContent: "space-between", alignItems: { sm: "center" } }}
+        >
+          <Box>
+            <Typography variant="h6">{t("admin.uploadedLogs")}</Typography>
+            <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
+              {t("admin.uploadedLogsDescription")}
+            </Typography>
+          </Box>
+          <FormControl size="small" sx={{ minWidth: 190 }}>
+            <InputLabel id="log-status-filter-label">{t("admin.status")}</InputLabel>
+            <Select
+              labelId="log-status-filter-label"
+              value={status}
+              label={t("admin.status")}
+              onChange={(event) =>
+                changeStatus(event.target.value as LogStatusFilter)
+              }
+            >
+              <MenuItem value="all">{t("admin.allStatuses")}</MenuItem>
+              {uploadStatuses.map((uploadStatus) => (
+                <MenuItem key={uploadStatus} value={uploadStatus}>
+                  {t(`admin.statusLabels.${uploadStatus}`)}
+                </MenuItem>
+              ))}
+            </Select>
+          </FormControl>
+        </Stack>
       </CardContent>
       <TableContainer>
         <Table
@@ -177,8 +296,12 @@ function LogsCard({ detail }: { detail: AdminMachineDetail }) {
           <TableHead>
             <TableRow>
               <TableCell sx={{ width: 420 }}>{t("admin.file")}</TableCell>
-              <TableCell sx={{ width: 240 }}>{t("admin.roastTime")}</TableCell>
-              <TableCell sx={{ width: 240 }}>{t("admin.uploadedAt")}</TableCell>
+              <TableCell sx={{ width: 240 }}>
+                {sortableHeader("roastedAt", t("admin.roastTime"))}
+              </TableCell>
+              <TableCell sx={{ width: 240 }}>
+                {sortableHeader("uploadedAt", t("admin.uploadedAt"))}
+              </TableCell>
               <TableCell sx={{ width: 220 }}>{t("admin.status")}</TableCell>
             </TableRow>
           </TableHead>
@@ -238,7 +361,7 @@ function LogsCard({ detail }: { detail: AdminMachineDetail }) {
             {logs.content.length === 0 && (
               <TableRow>
                 <TableCell colSpan={4} align="center" sx={{ py: 8, color: "text.secondary" }}>
-                  {t("admin.noLogs")}
+                  {status === "all" ? t("admin.noLogs") : t("admin.noLogsForStatus")}
                 </TableCell>
               </TableRow>
             )}
@@ -259,7 +382,7 @@ function LogsCard({ detail }: { detail: AdminMachineDetail }) {
 }
 
 export default function AdminMachineDetailPage() {
-  const { detail } = useLoaderData<typeof loader>();
+  const { detail, status, sortBy, direction } = useLoaderData<typeof loader>();
   const { t } = useTranslation("common");
 
   return (
@@ -285,7 +408,14 @@ export default function AdminMachineDetailPage() {
     >
       <Suspense fallback={<LogsCardSkeleton />}>
         <Await resolve={detail}>
-          {(resolved) => <LogsCard detail={resolved} />}
+          {(resolved) => (
+            <LogsCard
+              detail={resolved}
+              status={status}
+              sortBy={sortBy}
+              direction={direction}
+            />
+          )}
         </Await>
       </Suspense>
     </AdminShell>

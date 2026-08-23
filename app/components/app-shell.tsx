@@ -25,10 +25,10 @@ import { Form, NavLink, useRouteLoaderData } from "react-router";
 import type { GoogleUser } from "~/lib/auth.server";
 
 const navigation = [
-  { to: "/app", labelKey: "navigation.home", icon: InboxOutlinedIcon, end: true },
-  { to: "/recipes", labelKey: "navigation.recipes", icon: BookOutlinedIcon },
-  { to: "/cupping", labelKey: "navigation.cupping", icon: ScienceOutlinedIcon },
-  { to: "/settings", labelKey: "navigation.settings", icon: SettingsOutlinedIcon },
+  { to: "/app", labelKey: "navigation.home", icon: InboxOutlinedIcon, end: true, hidden: true },
+  { to: "/recipes", labelKey: "navigation.recipes", icon: BookOutlinedIcon, hidden: true },
+  { to: "/cupping", labelKey: "navigation.cupping", icon: ScienceOutlinedIcon, hidden: true },
+  { to: "/settings", labelKey: "navigation.settings", icon: SettingsOutlinedIcon, hidden: true },
   { to: "/admin", labelKey: "navigation.admin", icon: AdminPanelSettingsOutlinedIcon, adminOnly: true },
 ];
 
@@ -52,7 +52,7 @@ export function AppShell({ children }: { children: ReactNode }) {
     | undefined;
   const user = appLayoutData?.user;
   const visibleNavigation = navigation.filter(
-    (item) => !item.adminOnly || user?.role === "ADMIN",
+    (item) => !item.hidden && (!item.adminOnly || user?.role === "ADMIN"),
   );
   const [menuOpen, setMenuOpen] = useState(false);
   const [languageAnchor, setLanguageAnchor] = useState<HTMLElement | null>(null);
