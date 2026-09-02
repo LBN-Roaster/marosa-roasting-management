@@ -3,10 +3,11 @@ import Stack from "@mui/material/Stack";
 import Typography from "@mui/material/Typography";
 import type { ReactNode } from "react";
 
-export function PageHeading({ title, description, actions }: { title: string; description?: string; actions?: ReactNode }) {
+export function PageHeading({ eyebrow, title, description, actions }: { eyebrow?: string; title: string; description?: string; actions?: ReactNode }) {
   return (
     <Stack direction={{ xs: "column", sm: "row" }} sx={{ mb: 3.5, justifyContent: "space-between", alignItems: { sm: "flex-end" }, gap: 2 }}>
       <Box>
+        {eyebrow && <Typography variant="body2" color="text.secondary" sx={{ mb: 0.5 }}>{eyebrow}</Typography>}
         <Typography component="h1" variant="h4">{title}</Typography>
         {description && <Typography variant="body2" color="text.secondary" sx={{ mt: 0.75, maxWidth: 650 }}>{description}</Typography>}
       </Box>

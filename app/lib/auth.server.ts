@@ -99,7 +99,28 @@ export async function getAuthSession(request: Request) {
   return getSessionStorage().getSession(request.headers.get("Cookie"));
 }
 
+/**
+ * DEVELOPMENT ONLY. With AUTH_DEV_BYPASS=true the app skips Google sign-in and
+ * runs as a stand-in user, so the screens can be clicked through locally. It is
+ * ignored in production builds no matter how the variable is set.
+ */
+export function authBypassEnabled() {
+  return (
+    process.env.AUTH_DEV_BYPASS === "true" &&
+    process.env.NODE_ENV !== "production"
+  );
+}
+
+const bypassUser: GoogleUser = {
+  sub: "dev-bypass",
+  email: process.env.AUTH_DEV_BYPASS_EMAIL ?? "dev@lbn.local",
+  name: "Local Developer",
+  role: "ADMIN",
+};
+
 export async function requireUser(request: Request) {
+  if (authBypassEnabled()) return bypassUser;
+
   const session = await getAuthSession(request);
   const user = session.get("user");
   if (

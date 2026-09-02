@@ -9,13 +9,19 @@ import Divider from "@mui/material/Divider";
 import Skeleton from "@mui/material/Skeleton";
 import Stack from "@mui/material/Stack";
 import Typography from "@mui/material/Typography";
-import { LineChart } from "@mui/x-charts/LineChart";
 import { Suspense, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
-import { Await, Link, useLoaderData, useParams } from "react-router";
+import { Await, Link, useFetcher, useLoaderData, useParams } from "react-router";
 import { AdminShell } from "~/components/admin-shell";
+import { RoastProfile, formatDuration } from "~/components/roast-profile-charts";
+import Alert from "@mui/material/Alert";
+import MenuItem from "@mui/material/MenuItem";
+import TextField from "@mui/material/TextField";
 import {
+  getLibrarySamples,
   getMachineLogVisualization,
+  linkRoastSample,
+  type LibrarySample,
   type MachineLogVisualization,
   type RoastUploadStatus,
 } from "~/lib/backend.server";
@@ -32,14 +38,99 @@ export async function loader({ request, params }: Route.LoaderArgs) {
       params.machineId,
       params.uploadId,
     ),
+    library: getLibrarySamples(request, { size: 200 }).then((page) => page.content),
   };
 }
 
-function formatDuration(seconds: number) {
-  const minutes = Math.floor(seconds / 60);
-  const remainder = Math.round(seconds % 60);
-  return `${minutes}:${remainder.toString().padStart(2, "0")}`;
+export async function action({ request }: Route.ActionArgs) {
+  const formData = await request.formData();
+  const sampleId = String(formData.get("sampleId") || "");
+  try {
+    await linkRoastSample(request, String(formData.get("roastId")), sampleId || null);
+  } catch (error) {
+    if (error instanceof Response && error.status >= 400 && error.status < 500) {
+      return { failed: true };
+    }
+    throw error;
+  }
+  return { linked: true };
 }
+
+/**
+ * Ties this roast to the coffee it roasted, so a batch off the machine can be
+ * traced to how it cupped. The bean name the machine recorded is free text, so
+ * a name match is only ever offered as a suggestion to confirm.
+ */
+function SampleLink({
+  roastId,
+  sample,
+  suggested,
+  library,
+}: {
+  roastId: string | null;
+  sample: LibrarySample | null;
+  suggested: LibrarySample | null;
+  library: LibrarySample[];
+}) {
+  const { t } = useTranslation(["common"]);
+  const fetcher = useFetcher<typeof action>();
+
+  if (!roastId) return null;
+  const busy = fetcher.state !== "idle";
+  const current = sample?.id ?? "";
+
+  return (
+    <Card>
+      <CardHeader
+        title={t("common:admin.linkedSample")}
+        subheader={t("common:admin.linkedSampleDescription")}
+        slotProps={{ title: { variant: "h6" } }}
+      />
+      <Divider />
+      <CardContent>
+        {suggested && !sample && (
+          <Alert
+            severity="info"
+            sx={{ mb: 2 }}
+            action={
+              <Button
+                size="small"
+                disabled={busy}
+                onClick={() =>
+                  void fetcher.submit({ roastId, sampleId: suggested.id }, { method: "post" })
+                }
+              >
+                {t("common:admin.useSuggestion")}
+              </Button>
+            }
+          >
+            {t("common:admin.sampleSuggestion", { name: suggested.name })}
+          </Alert>
+        )}
+        <TextField
+          select
+          fullWidth
+          label={t("common:admin.linkedSample")}
+          value={current}
+          disabled={busy}
+          onChange={(event) =>
+            void fetcher.submit({ roastId, sampleId: event.target.value }, { method: "post" })
+          }
+          sx={{ maxWidth: 420 }}
+        >
+          <MenuItem value="">{t("common:admin.noLinkedSample")}</MenuItem>
+          {library.map((item) => (
+            <MenuItem key={item.id} value={item.id}>
+              {item.name}
+              {item.species ? ` · ${item.species}` : ""}
+            </MenuItem>
+          ))}
+        </TextField>
+      </CardContent>
+    </Card>
+  );
+}
+
 
 function statusColor(status: RoastUploadStatus) {
   if (status === "PROCESSED") return "success" as const;
@@ -76,7 +167,13 @@ function VisualizationSkeleton() {
   );
 }
 
-function VisualizationContent({ data }: { data: MachineLogVisualization }) {
+function VisualizationContent({
+  data,
+  library,
+}: {
+  data: MachineLogVisualization;
+  library: LibrarySample[];
+}) {
   const { t } = useTranslation(["common", "roastDetail"]);
   const duration = data.points.at(-1)?.seconds ?? 0;
 
@@ -137,172 +234,21 @@ function VisualizationContent({ data }: { data: MachineLogVisualization }) {
         </CardContent>
       </Card>
 
-      <Card>
-        <CardHeader
-          title={t("common:admin.roastProfile")}
-          subheader={t("common:admin.roastProfileDescription")}
-          slotProps={{ title: { variant: "h6" } }}
-        />
-        <Divider />
-        <CardContent>
-          <Box sx={{ overflowX: "auto" }}>
-            <Box sx={{ minWidth: 820, width: "100%" }}>
-              <LineChart
-                dataset={data.points}
-                height={480}
-                margin={{ left: 70, right: 70, top: 40, bottom: 55 }}
-                xAxis={[
-                  {
-                    dataKey: "seconds",
-                    scaleType: "linear",
-                    label: t("roastDetail:chart.time"),
-                    valueFormatter: (value) => formatDuration(Number(value)),
-                  },
-                ]}
-                yAxis={[
-                  {
-                    id: "temperature",
-                    position: "left",
-                    label: `${t("roastDetail:chart.temperature")} ${data.temperatureUnit}`,
-                  },
-                  {
-                    id: "ror",
-                    position: "right",
-                    label: `RoR (${data.temperatureUnit}/min)`,
-                  },
-                ]}
-                series={[
-                  {
-                    dataKey: "beanTemperature",
-                    yAxisId: "temperature",
-                    label: t("roastDetail:chart.beanTemperature"),
-                    color: "#009688",
-                    showMark: false,
-                    curve: "monotoneX",
-                    connectNulls: true,
-                  },
-                  {
-                    dataKey: "environmentTemperature",
-                    yAxisId: "temperature",
-                    label: t("roastDetail:chart.exhaustTemperature"),
-                    color: "#FF5252",
-                    showMark: false,
-                    curve: "monotoneX",
-                    connectNulls: true,
-                  },
-                  {
-                    dataKey: "rateOfRise",
-                    yAxisId: "ror",
-                    label: t("roastDetail:chart.rateOfRise"),
-                    color: "#448AFF",
-                    showMark: false,
-                    curve: "monotoneX",
-                    connectNulls: true,
-                  },
-                ]}
-                grid={{ horizontal: true, vertical: true }}
-              />
-            </Box>
-          </Box>
-          <Typography variant="subtitle2" sx={{ mt: 3, mb: 1 }}>
-            {t("roastDetail:chart.percent")}
-          </Typography>
-          <Box sx={{ overflowX: "auto" }}>
-            <Box sx={{ minWidth: 820, width: "100%" }}>
-              <LineChart
-                dataset={data.points}
-                height={260}
-                margin={{ left: 70, right: 30, top: 30, bottom: 50 }}
-                xAxis={[
-                  {
-                    dataKey: "seconds",
-                    scaleType: "linear",
-                    label: t("roastDetail:chart.time"),
-                    valueFormatter: (value) => formatDuration(Number(value)),
-                  },
-                ]}
-                yAxis={[
-                  {
-                    min: 0,
-                    max: 100,
-                    label: t("roastDetail:chart.percent"),
-                  },
-                ]}
-                series={[
-                  {
-                    dataKey: "burner",
-                    label: t("roastDetail:chart.burner"),
-                    color: "#FF9800",
-                    showMark: false,
-                    curve: "stepAfter",
-                    connectNulls: true,
-                  },
-                  {
-                    dataKey: "air",
-                    label: t("roastDetail:chart.air"),
-                    color: "#26C6DA",
-                    showMark: false,
-                    curve: "stepAfter",
-                    connectNulls: true,
-                  },
-                  {
-                    dataKey: "drum",
-                    label: t("roastDetail:chart.drum"),
-                    color: "#3B8061",
-                    showMark: false,
-                    curve: "stepAfter",
-                    connectNulls: true,
-                  },
-                ]}
-                grid={{ horizontal: true }}
-              />
-            </Box>
-          </Box>
-        </CardContent>
-      </Card>
+      <SampleLink
+        roastId={data.log.roastId}
+        sample={data.sample}
+        suggested={data.suggestedSample}
+        library={library}
+      />
 
-      <Card>
-        <CardHeader
-          title={t("common:admin.milestones")}
-          slotProps={{ title: { variant: "h6" } }}
-        />
-        <Divider />
-        <CardContent
-          component="dl"
-          sx={{
-            display: "grid",
-            gridTemplateColumns: {
-              xs: "repeat(2, minmax(0, 1fr))",
-              md: "repeat(4, minmax(0, 1fr))",
-            },
-            gap: 3,
-            m: 0,
-          }}
-        >
-          {data.milestones.map((milestone) => (
-            <DetailItem
-              key={milestone.type}
-              label={t(`common:admin.milestoneLabels.${milestone.type}`)}
-            >
-              {formatDuration(milestone.seconds)}
-              {milestone.temperature == null
-                ? ""
-                : ` · ${milestone.temperature.toFixed(1)} ${data.temperatureUnit}`}
-            </DetailItem>
-          ))}
-          {data.milestones.length === 0 && (
-            <Typography color="text.secondary">
-              {t("common:admin.noMilestones")}
-            </Typography>
-          )}
-        </CardContent>
-      </Card>
+      <RoastProfile data={data} />
+
     </Stack>
   );
 }
 
 export default function AdminMachineLogPage() {
-  const { visualization } = useLoaderData<typeof loader>();
+  const { visualization, library } = useLoaderData<typeof loader>();
   const { machineId } = useParams();
   const { t } = useTranslation("common");
 
@@ -322,7 +268,13 @@ export default function AdminMachineLogPage() {
         </Box>
         <Suspense fallback={<VisualizationSkeleton />}>
           <Await resolve={visualization}>
-            {(data) => <VisualizationContent data={data} />}
+            {(data) => (
+              <Suspense fallback={null}>
+                <Await resolve={library} errorElement={null}>
+                  {(resolved) => <VisualizationContent data={data} library={resolved} />}
+                </Await>
+              </Suspense>
+            )}
           </Await>
         </Suspense>
       </Stack>

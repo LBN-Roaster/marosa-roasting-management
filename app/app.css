@@ -23,3 +23,14 @@ textarea {
 ::selection {
   background: rgb(90 175 135 / 30%);
 }
+
+/* Report pages print as a document: the controls that drive them do not. */
+@media print {
+  body {
+    background: #fff;
+  }
+
+  .no-print {
+    display: none !important;
+  }
+}

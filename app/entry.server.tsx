@@ -77,6 +77,13 @@ export default function handleRequest(
           reject(error);
         },
         onError(error: unknown) {
+          // A visitor who reloads or navigates away mid-render cancels the
+          // response, and react-dom reports the closed destination as an error.
+          // Nothing went wrong, and on a streamed route (the ones whose loaders
+          // return a promise) the window is wide enough that a dev-server
+          // reload drowns the log in them.
+          if (request.signal.aborted) return;
+
           responseStatusCode = 500;
           // Log streaming rendering errors from inside the shell.  Don't log
           // errors encountered during initial shell rendering since they'll

@@ -1,5 +1,5 @@
 import { redirect } from "react-router";
-import { getAuthSession } from "~/lib/auth.server";
+import { authBypassEnabled, getAuthSession } from "~/lib/auth.server";
 
 export type MachineStatus =
   | "IN_PRODUCTION"
@@ -73,6 +73,188 @@ export type MachineApiKeySummary = {
   createdAt: string;
 };
 
+export type CuppingProtocol =
+  | "ARABICA"
+  | "ROBUSTA"
+  | "CUP_OF_EXCELLENCE"
+  | "SCA_CVA_DESCRIPTIVE"
+  | "SCA_CVA_AFFECTIVE"
+  | "SCA_CVA_COMBINED";
+
+export type SampleIdStructure = "NUMBERS" | "THREE_DIGIT" | "LETTERS";
+
+export type Member = {
+  id: string;
+  name: string | null;
+  email: string;
+  picture: string | null;
+};
+
+export type CuppingSessionSummary = {
+  id: string;
+  reference: number;
+  owner: Member;
+  name: string;
+  startsAt: string;
+  endsAt: string;
+  location: string | null;
+  protocol: CuppingProtocol;
+  blind: boolean;
+  comboCupping: boolean;
+  sampleCount: number;
+  scoredCount: number;
+};
+
+export type CuppingSessionDetail = {
+  id: string;
+  reference: number;
+  owner: Member;
+  name: string;
+  description: string | null;
+  protocol: CuppingProtocol;
+  comboCupping: boolean;
+  sampleWeight: number | null;
+  cupsPerSample: number;
+  customCups: boolean;
+  blind: boolean;
+  sampleIdStructure: SampleIdStructure;
+  startsAt: string;
+  endsAt: string;
+  location: string | null;
+  samples: { id: string; ordinal: number; label: string }[];
+  cuppers: Member[];
+  guests: { id: string; name: string; email: string }[];
+  scoredCount: number;
+};
+
+/** Body accepted by POST and PUT /api/cupping-sessions. */
+export type CuppingSessionPayload = {
+  name: string;
+  description: string | null;
+  protocol: CuppingProtocol;
+  comboCupping: boolean;
+  sampleWeight: number | null;
+  sampleCount: number;
+  cupsPerSample: number;
+  customCups: boolean;
+  blind: boolean;
+  sampleIdStructure: SampleIdStructure;
+  startsAt: string;
+  endsAt: string;
+  location: string | null;
+  cupperIds: string[];
+  guests: { name: string; email: string }[];
+};
+
+export type RoastLevel = "LIGHT" | "MID_LIGHT" | "MEDIUM" | "MID_DARK" | "DARK";
+export type CuppingScoreStatus = "DRAFT" | "SUBMITTED";
+export type DescriptorAttribute =
+  | "FRAGRANCE"
+  | "FLAVOR"
+  | "AFTERTASTE"
+  | "ACIDITY"
+  | "BODY"
+  | "BALANCE"
+  | "DEFECTS";
+
+export type CuppingSampleDetail = {
+  id: string;
+  ordinal: number;
+  label: string;
+  sampleName: string | null;
+  sampleType: string | null;
+  species: string | null;
+  details: Record<string, string>;
+  /** The library coffee this slot cups, when one was picked. */
+  sampleId: string | null;
+  sampleLibraryName: string | null;
+  sampleTag: string | null;
+};
+
+export type CuppingSamplePayload = {
+  /** Null clears the link; the fields below are then the slot's own identity. */
+  sampleId: string | null;
+  sampleName: string | null;
+  sampleType: string | null;
+  species: string | null;
+  details: Record<string, string>;
+};
+
+/** A coffee in the library, reusable across sessions and roast logs. */
+export type LibrarySample = {
+  id: string;
+  /** The code printed on the bag, e.g. S-260902-142. */
+  tag: string;
+  taggedOn: string;
+  name: string;
+  sampleType: string | null;
+  species: string | null;
+  details: Record<string, string>;
+};
+
+export type LibrarySamplePayload = {
+  name: string;
+  /** The date the tag stands for; omit to use today. */
+  taggedOn?: string | null;
+  sampleType: string | null;
+  species: string | null;
+  details: Record<string, string>;
+};
+
+export type CuppingScoreDescriptor = {
+  attribute: DescriptorAttribute;
+  descriptor: string;
+};
+
+export type CuppingScore = {
+  id: string;
+  sampleId: string;
+  roastLevel: RoastLevel | null;
+  fragranceDry: number;
+  fragranceBreak: number;
+  fragranceScore: number;
+  acidityIntensity: number;
+  acidityScore: number;
+  bodyLevel: number;
+  bodyScore: number;
+  flavorScore: number;
+  aftertasteScore: number;
+  balanceScore: number;
+  overallScore: number;
+  uniformityCups: number;
+  cleanCupCups: number;
+  sweetnessCups: number;
+  defectCups: number;
+  defectIntensity: number;
+  reroastRequested: boolean;
+  quakerCount: number | null;
+  notes: string | null;
+  totalScore: number;
+  status: CuppingScoreStatus;
+  descriptors: CuppingScoreDescriptor[];
+};
+
+export type CuppingScorePayload = Omit<CuppingScore, "id" | "sampleId" | "totalScore">;
+
+/** One cupper's submitted score on a sample, as the results view sees it. */
+export type CuppingCupperScore = {
+  scorer: Member | null;
+  score: CuppingScore;
+};
+
+/** A sample plus every submitted score on it. */
+export type CuppingSampleResult = {
+  id: string;
+  ordinal: number;
+  label: string;
+  sampleName: string | null;
+  sampleType: string | null;
+  species: string | null;
+  details: Record<string, string>;
+  averageScore: number | null;
+  scores: CuppingCupperScore[];
+};
+
 export type AlogProfilePoint = {
   seconds: number;
   beanTemperature: number | null;
@@ -97,6 +279,10 @@ export type MachineLogVisualization = {
   temperatureUnit: "°C" | "°F";
   points: AlogProfilePoint[];
   milestones: AlogMilestone[];
+  /** The library coffee this roast is linked to, once confirmed. */
+  sample: LibrarySample | null;
+  /** A match on the machine's bean name, offered for confirmation. */
+  suggestedSample: LibrarySample | null;
 };
 
 function backendOrigin() {
@@ -113,7 +299,10 @@ async function backendRequest<T>(
 ): Promise<T> {
   const session = await getAuthSession(request);
   const token = session.get("backendToken");
-  if (!token) throw redirect("/login");
+  // With the development bypass on there is no token to send; the backend is
+  // running with its own bypass and supplies the stand-in user itself.
+  const bypass = authBypassEnabled();
+  if (!token && !bypass) throw redirect("/login");
 
   let response: Response;
   try {
@@ -121,7 +310,7 @@ async function backendRequest<T>(
       ...init,
       headers: {
         ...init?.headers,
-        Authorization: `Bearer ${token}`,
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
       },
     });
   } catch {
@@ -135,7 +324,7 @@ async function backendRequest<T>(
     throw new Response("Forbidden.", { status: 403 });
   }
   if (response.status === 404) {
-    throw new Response("Machine not found.", { status: 404 });
+    throw new Response("Not found.", { status: 404 });
   }
   if (!response.ok) {
     throw new Response("The backend request failed.", { status: response.status });
@@ -213,5 +402,322 @@ export function getMachineLogVisualization(
   return backendJson<MachineLogVisualization>(
     request,
     `/api/admin/machines/${encodeURIComponent(machineId)}/logs/${encodeURIComponent(uploadId)}`,
+  );
+}
+
+export function getCuppingSessions(request: Request, params?: PageParams) {
+  return backendJson<PageResponse<CuppingSessionSummary>>(
+    request,
+    `/api/cupping-sessions${pageQuery(params)}`,
+  );
+}
+
+export function getCuppingSession(request: Request, sessionId: string) {
+  return backendJson<CuppingSessionDetail>(
+    request,
+    `/api/cupping-sessions/${encodeURIComponent(sessionId)}`,
+  );
+}
+
+export function createCuppingSession(
+  request: Request,
+  payload: CuppingSessionPayload,
+) {
+  return backendRequest<CuppingSessionDetail>(request, "/api/cupping-sessions", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+  });
+}
+
+export function updateCuppingSession(
+  request: Request,
+  sessionId: string,
+  payload: CuppingSessionPayload,
+) {
+  return backendRequest<CuppingSessionDetail>(
+    request,
+    `/api/cupping-sessions/${encodeURIComponent(sessionId)}`,
+    {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    },
+  );
+}
+
+export function duplicateCuppingSession(request: Request, sessionId: string) {
+  return backendRequest<CuppingSessionDetail>(
+    request,
+    `/api/cupping-sessions/${encodeURIComponent(sessionId)}/duplicate`,
+    { method: "POST" },
+  );
+}
+
+export function deleteCuppingSession(request: Request, sessionId: string) {
+  return backendRequest<void>(
+    request,
+    `/api/cupping-sessions/${encodeURIComponent(sessionId)}`,
+    { method: "DELETE" },
+  );
+}
+
+export function getMembers(request: Request) {
+  return backendJson<Member[]>(request, "/api/members");
+}
+
+export function getCuppingSamples(request: Request, sessionId: string) {
+  return backendJson<CuppingSampleDetail[]>(
+    request,
+    `/api/cupping-sessions/${encodeURIComponent(sessionId)}/samples`,
+  );
+}
+
+export function addCuppingSamples(request: Request, sessionId: string, count: number) {
+  return backendRequest<CuppingSampleDetail[]>(
+    request,
+    `/api/cupping-sessions/${encodeURIComponent(sessionId)}/samples`,
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ count }),
+    },
+  );
+}
+
+export function updateCuppingSample(
+  request: Request,
+  sessionId: string,
+  sampleId: string,
+  payload: CuppingSamplePayload,
+) {
+  return backendRequest<CuppingSampleDetail>(
+    request,
+    `/api/cupping-sessions/${encodeURIComponent(sessionId)}/samples/${encodeURIComponent(sampleId)}`,
+    {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    },
+  );
+}
+
+export function deleteCuppingSample(request: Request, sessionId: string, sampleId: string) {
+  return backendRequest<void>(
+    request,
+    `/api/cupping-sessions/${encodeURIComponent(sessionId)}/samples/${encodeURIComponent(sampleId)}`,
+    { method: "DELETE" },
+  );
+}
+
+export function getMyCuppingScores(request: Request, sessionId: string) {
+  return backendJson<CuppingScore[]>(
+    request,
+    `/api/cupping-sessions/${encodeURIComponent(sessionId)}/scores/me`,
+  );
+}
+
+export function getLibrarySamples(
+  request: Request,
+  params?: PageParams & { search?: string },
+) {
+  const search = new URLSearchParams();
+  if (params?.page != null) search.set("page", String(params.page));
+  if (params?.size != null) search.set("size", String(params.size));
+  if (params?.search) search.set("search", params.search);
+  const query = search.toString();
+  return backendJson<PageResponse<LibrarySample>>(
+    request,
+    `/api/samples${query ? `?${query}` : ""}`,
+  );
+}
+
+export function createLibrarySample(request: Request, payload: LibrarySamplePayload) {
+  return backendRequest<LibrarySample>(request, "/api/samples", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+  });
+}
+
+export function updateLibrarySample(
+  request: Request,
+  sampleId: string,
+  payload: LibrarySamplePayload,
+) {
+  return backendRequest<LibrarySample>(
+    request,
+    `/api/samples/${encodeURIComponent(sampleId)}`,
+    {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    },
+  );
+}
+
+export function deleteLibrarySample(request: Request, sampleId: string) {
+  return backendRequest<void>(request, `/api/samples/${encodeURIComponent(sampleId)}`, {
+    method: "DELETE",
+  });
+}
+
+/** A synced roast in the roast log listing. */
+export type RoastSummary = {
+  id: string;
+  roastedAt: string;
+  beanName: string | null;
+  batchNumber: string | null;
+  chargeWeight: number | null;
+  dropWeight: number | null;
+  developmentRatio: number | null;
+  machineSerialNumber: string | null;
+  sampleId: string | null;
+  sampleTag: string | null;
+  sampleName: string | null;
+};
+
+/** A roast in full: what the roaster typed, plus what the curve yielded. */
+export type RoastDetail = {
+  id: string;
+  roastedAt: string;
+  beanName: string | null;
+  batchNumber: string | null;
+  chargeWeight: number | null;
+  dropWeight: number | null;
+  chargeTemperature: number | null;
+  dropTemperature: number | null;
+  firstCrackSeconds: number | null;
+  dropSeconds: number | null;
+  developmentSeconds: number | null;
+  developmentRatio: number | null;
+  sourceRoastId: string | null;
+  machineId: string | null;
+  machineSerialNumber: string | null;
+  uploadId: string | null;
+  sampleId: string | null;
+  sampleTag: string | null;
+  sampleName: string | null;
+};
+
+/** Only the fields a roaster may correct; curve-derived values are read-only. */
+export type RoastPayload = {
+  beanName: string | null;
+  batchNumber: string | null;
+  chargeWeight: number | null;
+  dropWeight: number | null;
+  roastedAt: string | null;
+};
+
+export function getRoast(request: Request, roastId: string) {
+  return backendJson<RoastDetail>(request, `/api/roasts/${encodeURIComponent(roastId)}`);
+}
+
+export function updateRoast(request: Request, roastId: string, payload: RoastPayload) {
+  return backendRequest<RoastDetail>(request, `/api/roasts/${encodeURIComponent(roastId)}`, {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+  });
+}
+
+export function getRoasts(
+  request: Request,
+  params?: PageParams & { search?: string },
+) {
+  const query = pageQuery(params);
+  const search = params?.search
+    ? `${query ? "&" : "?"}search=${encodeURIComponent(params.search)}`
+    : "";
+  return backendJson<PageResponse<RoastSummary>>(request, `/api/roasts${query}${search}`);
+}
+
+/** A roast as it appears on the coffee it roasted. */
+export type SampleRoast = {
+  id: string;
+  roastedAt: string;
+  beanName: string | null;
+  batchNumber: string | null;
+  chargeWeight: number | null;
+  dropWeight: number | null;
+  developmentRatio: number | null;
+  machineId: string | null;
+  machineSerialNumber: string | null;
+  uploadId: string | null;
+};
+
+/** A coffee with the roasts it came from. */
+export type SampleDetail = LibrarySample & { roasts: SampleRoast[] };
+
+export function getSample(request: Request, sampleId: string) {
+  return backendJson<SampleDetail>(
+    request,
+    `/api/samples/${encodeURIComponent(sampleId)}`,
+  );
+}
+
+/** The roast curve, addressed by roast and readable without admin rights. */
+export function getRoastProfile(request: Request, roastId: string) {
+  return backendJson<MachineLogVisualization>(
+    request,
+    `/api/roasts/${encodeURIComponent(roastId)}/profile`,
+  );
+}
+
+/** Mints a tagged sample for a roast and links the two in one step. */
+export function createSampleFromRoast(request: Request, roastId: string) {
+  return backendRequest<LibrarySample>(
+    request,
+    `/api/roasts/${encodeURIComponent(roastId)}/sample`,
+    { method: "POST" },
+  );
+}
+
+/** Links a synced roast log to the coffee it roasted; null clears the link. */
+export function linkRoastSample(request: Request, roastId: string, sampleId: string | null) {
+  return backendRequest<void>(
+    request,
+    `/api/roasts/${encodeURIComponent(roastId)}/sample`,
+    {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ sampleId }),
+    },
+  );
+}
+
+export function getCuppingResults(request: Request, sessionId: string) {
+  return backendJson<CuppingSampleResult[]>(
+    request,
+    `/api/cupping-sessions/${encodeURIComponent(sessionId)}/results`,
+  );
+}
+
+export function deleteMyCuppingScore(
+  request: Request,
+  sessionId: string,
+  sampleId: string,
+) {
+  return backendRequest<void>(
+    request,
+    `/api/cupping-sessions/${encodeURIComponent(sessionId)}/samples/${encodeURIComponent(sampleId)}/score`,
+    { method: "DELETE" },
+  );
+}
+
+export function saveCuppingScore(
+  request: Request,
+  sessionId: string,
+  sampleId: string,
+  payload: CuppingScorePayload,
+) {
+  return backendRequest<CuppingScore>(
+    request,
+    `/api/cupping-sessions/${encodeURIComponent(sessionId)}/samples/${encodeURIComponent(sampleId)}/score`,
+    {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    },
   );
 }
