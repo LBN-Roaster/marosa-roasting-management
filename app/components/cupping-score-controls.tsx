@@ -16,7 +16,12 @@ import { useTranslation } from "react-i18next";
 
 /** SCA forms move in quarter points. */
 export const scoreStep = 0.25;
-export const minScore = 6;
+/**
+ * The SCA form prints its quality scale from 6, but nothing in the arithmetic
+ * forbids going lower, and a cupper does occasionally need to. Five matches
+ * what our cuppers are used to elsewhere and keeps the stepper out of their way.
+ */
+export const minScore = 5;
 export const maxScore = 10;
 
 export function ScoreStepper({
