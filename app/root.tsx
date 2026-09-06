@@ -10,6 +10,7 @@ import {
 } from "react-router";
 import { useMemo } from "react";
 import { I18nextProvider } from "react-i18next";
+import { Analytics } from "@vercel/analytics/react";
 
 import type { Route } from "./+types/root";
 import { createI18n, localeFromRequest } from "~/i18n";
@@ -55,6 +56,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
         {children}
         <ScrollRestoration />
         <Scripts />
+        <Analytics />
       </body>
     </html>
   );
