@@ -36,7 +36,7 @@ export function PublicHeader({ compact = false }: { compact?: boolean }) {
 
           <Stack direction="row" spacing={1} sx={{ ml: "auto", alignItems: "center" }}>
             <Button color="inherit" size="small" startIcon={<TranslateIcon />} onClick={openLanguageMenu} aria-label={t("common:language.label")}>
-              {i18n.resolvedLanguage === "vi" ? "VI" : "EN"}
+              {i18n.resolvedLanguage === "en" ? "EN" : "VI"}
             </Button>
             {!compact && (
               <>
@@ -49,8 +49,8 @@ export function PublicHeader({ compact = false }: { compact?: boolean }) {
       </Container>
 
       <Menu anchorEl={languageAnchor} open={Boolean(languageAnchor)} onClose={() => setLanguageAnchor(null)}>
-        <MenuItem selected={i18n.resolvedLanguage === "en"} onClick={() => changeLanguage("en")}>{t("common:language.english")}</MenuItem>
         <MenuItem selected={i18n.resolvedLanguage === "vi"} onClick={() => changeLanguage("vi")}>{t("common:language.vietnamese")}</MenuItem>
+        <MenuItem selected={i18n.resolvedLanguage === "en"} onClick={() => changeLanguage("en")}>{t("common:language.english")}</MenuItem>
       </Menu>
     </Box>
   );

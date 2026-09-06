@@ -1,7 +1,7 @@
 import { createInstance, type i18n } from "i18next";
 import { initReactI18next } from "react-i18next";
 
-export type Locale = "en" | "vi";
+export type Locale = "vi" | "en";
 
 const resources = {
   en: {
@@ -994,7 +994,7 @@ const resources = {
         controls: { gas: "Gas", fan: "Fan", drum: "Drum" },
       },
       proof: {
-        label: "Pilot program — đang chạy",
+        label: "Chương trình pilot — đang chạy",
         roasteries: { value: "5", label: "Rang xưởng pilot" },
         batches: { value: "142", label: "Mẻ liên tiếp" },
         days: { value: "90", label: "Ngày vận hành" },
@@ -1012,7 +1012,7 @@ const resources = {
         closing: "“Tất nhiên, bạn vẫn có thể giải quyết tất cả những vấn đề này, nhưng sẽ dễ dàng hơn khi chúng tôi giúp bạn một tay.”",
       },
       stats: {
-        label: "Solution At A Glance",
+        label: "Tổng quan giải pháp",
         title: "Cách MAROSA hỗ trợ bạn",
         accuracy: { title: "Độ chính xác nhiệt", desc: "BT bám profile trong ngưỡng ±1°C (142 mẻ pilot)", outcome: "Mỗi mẻ ra giống mẻ trước — QA ổn định, ít mẻ lỗi." },
         tick: { title: "Tick loop Engine", desc: "Modbus → PID → Telemetry mỗi 500ms", outcome: "Máy thấy thay đổi ngay khi nó xảy ra, không trễ một nhịp." },
@@ -1095,7 +1095,7 @@ const resources = {
           cta: "Đăng ký tư vấn gói Tiêu Chuẩn",
         },
         pro: {
-          badge: "Enterprise Operations",
+          badge: "Vận hành quy mô xưởng",
           name: "Chuyên Nghiệp",
           eligibility: "Chỉ máy từ 6 kg trở lên",
           description: "Tự động hoá cả ca sản xuất, không chỉ từng mẻ.",
@@ -1123,7 +1123,7 @@ const resources = {
         },
       },
       faq: {
-        label: "Technical FAQ",
+        label: "Câu hỏi kỹ thuật",
         title: "Câu hỏi kỹ thuật thường gặp",
         subtitle: "Tích hợp, vận hành, an toàn — trả lời ngắn, không marketing.",
         hardware: {
@@ -1730,7 +1730,7 @@ export function createI18n(locale: Locale): i18n {
     resources,
     lng: locale,
     fallbackLng: "vi",
-    supportedLngs: ["en", "vi"],
+    supportedLngs: ["vi", "en"],
     defaultNS: "common",
     fallbackNS: "common",
     initAsync: false,

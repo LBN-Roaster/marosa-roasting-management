@@ -35,8 +35,8 @@ import { PublicHeader } from "~/components/public-header";
 
 export function meta() {
   return [
-    { title: "MAROSA — Coffee roasting, clearly managed" },
-    { name: "description", content: "Recipes, roast profiles, and production records in one calm workspace." },
+    { title: "MAROSA — Rang cà phê, quản lý rõ ràng" },
+    { name: "description", content: "Công thức, biểu đồ rang và hồ sơ sản xuất trong một không gian làm việc tinh gọn." },
   ];
 }
 

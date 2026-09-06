@@ -65,7 +65,7 @@ export function RoastProfileChart({ data }: { data: MachineLogVisualization }) {
                   position: "left",
                   label: `${t("roastDetail:chart.temperature")} ${data.temperatureUnit}`,
                 },
-                { id: "ror", position: "right", label: `RoR (${data.temperatureUnit}/min)` },
+                { id: "ror", position: "right", min: 0, label: `RoR (${data.temperatureUnit}/min)` },
               ]}
               series={[
                 {

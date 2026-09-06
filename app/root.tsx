@@ -37,14 +37,14 @@ export const meta: Route.MetaFunction = () => [
   { title: "MAROSA" },
   {
     name: "description",
-    content: "Coffee roasting recipes and production management.",
+    content: "Quản lý công thức và sản xuất rang cà phê.",
   },
 ];
 
 export function Layout({ children }: { children: React.ReactNode }) {
   const data = useRouteLoaderData<typeof loader>("root");
   return (
-    <html lang={data?.locale ?? "en"}>
+    <html lang={data?.locale ?? "vi"}>
       <head>
         <meta charSet="utf-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1" />
