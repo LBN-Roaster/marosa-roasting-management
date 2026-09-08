@@ -136,7 +136,6 @@ export default function RoastDetailPage() {
             <DetailItem label={t("turningPoint")}>{milestone(roast.milestones.turningPoint)}</DetailItem>
             <DetailItem label={t("dryEnd")}>{milestone(roast.milestones.dryEnd)}</DetailItem>
             <DetailItem label={t("firstCrackStart")}>{milestone(roast.milestones.firstCrackStart)}</DetailItem>
-            <DetailItem label={t("firstCrackEnd")}>{milestone(roast.milestones.firstCrackEnd)}</DetailItem>
             <DetailItem label={t("secondCrackStart")}>{milestone(roast.milestones.secondCrackStart)}</DetailItem>
             <DetailItem label={t("drop")}>{milestone(roast.milestones.drop)}</DetailItem>
             <DetailItem label={t("roastTime")}>{formatDuration(roast.milestones.drop.seconds)}</DetailItem>

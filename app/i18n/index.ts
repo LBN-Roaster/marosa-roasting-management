@@ -94,6 +94,7 @@ const resources = {
         milestoneLabels: {
           CHARGE: "Charge",
           TURNING_POINT: "Turning point",
+          DRY_END: "Dry end",
           FIRST_CRACK_START: "First crack start",
           FIRST_CRACK_END: "First crack end",
           SECOND_CRACK_START: "Second crack start",
@@ -953,6 +954,7 @@ const resources = {
         milestoneLabels: {
           CHARGE: "Nạp hạt",
           TURNING_POINT: "Điểm chuyển",
+          DRY_END: "Kết thúc sấy",
           FIRST_CRACK_START: "Bắt đầu nổ lần một",
           FIRST_CRACK_END: "Kết thúc nổ lần một",
           SECOND_CRACK_START: "Bắt đầu nổ lần hai",

@@ -21,12 +21,21 @@ const milestoneAbbreviations: Record<string, string> = {
   TURNING_POINT: "TP",
   DRY_END: "DE",
   FIRST_CRACK_START: "1Cs",
-  FIRST_CRACK_END: "1Ce",
   SECOND_CRACK_START: "2Cs",
-  SECOND_CRACK_END: "2Ce",
   DROP: "DROP",
-  COOL_END: "COOL",
 };
+
+/**
+ * The milestones the roast views surface, in roast order. The parser also reports crack ends and
+ * cool end; those stay hidden to keep the chart readable.
+ */
+const shownMilestones = new Set(Object.keys(milestoneAbbreviations));
+
+function shownIn(data: MachineLogVisualization) {
+  return data.milestones
+    .filter((milestone) => shownMilestones.has(milestone.type))
+    .sort((a, b) => a.seconds - b.seconds);
+}
 
 /** SVG callouts share the chart's scales, so they remain anchored on resize. */
 function MilestoneAnnotations({ data }: { data: MachineLogVisualization }) {
@@ -42,7 +51,7 @@ function MilestoneAnnotations({ data }: { data: MachineLogVisualization }) {
 
   return (
     <g aria-label={t("admin.milestones")} style={{ pointerEvents: "none" }}>
-      {[...data.milestones].sort((a, b) => a.seconds - b.seconds).map((milestone, index) => {
+      {shownIn(data).map((milestone, index) => {
         if (milestone.temperature == null || !Number.isFinite(milestone.temperature) ||
             !Number.isFinite(milestone.seconds)) return null;
         const x = xScale(milestone.seconds);
@@ -259,9 +268,10 @@ export function RoastProfileChart({ data }: { data: MachineLogVisualization }) {
   );
 }
 
-/** Charge, dry end, first crack and drop, as the parser found them. */
+/** Charge, turning point, dry end, both cracks and drop, as the parser found them. */
 export function RoastMilestones({ data }: { data: MachineLogVisualization }) {
   const { t } = useTranslation(["common"]);
+  const milestones = shownIn(data);
 
   return (
     <Card>
@@ -279,7 +289,7 @@ export function RoastMilestones({ data }: { data: MachineLogVisualization }) {
           m: 0,
         }}
       >
-        {data.milestones.map((milestone) => (
+        {milestones.map((milestone) => (
           <DetailItem
             key={milestone.type}
             label={t(`common:admin.milestoneLabels.${milestone.type}`)}
@@ -290,7 +300,7 @@ export function RoastMilestones({ data }: { data: MachineLogVisualization }) {
               : ` · ${milestone.temperature.toFixed(1)} ${data.temperatureUnit}`}
           </DetailItem>
         ))}
-        {data.milestones.length === 0 && (
+        {milestones.length === 0 && (
           <Typography color="text.secondary">{t("common:admin.noMilestones")}</Typography>
         )}
       </CardContent>

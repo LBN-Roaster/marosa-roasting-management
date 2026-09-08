@@ -8,7 +8,7 @@ import Stack from "@mui/material/Stack";
 import Typography from "@mui/material/Typography";
 import { useState, type MouseEvent } from "react";
 import { useTranslation } from "react-i18next";
-import { Link } from "react-router";
+import { Link, NavLink } from "react-router";
 
 export function PublicHeader({ compact = false }: { compact?: boolean }) {
   const { t, i18n } = useTranslation(["landing", "common"]);
@@ -34,7 +34,17 @@ export function PublicHeader({ compact = false }: { compact?: boolean }) {
             <Typography sx={{ display: { xs: "none", sm: "block" }, fontWeight: 800, letterSpacing: ".16em" }}>MAROSA</Typography>
           </Stack>
 
-          <Stack direction="row" spacing={1} sx={{ ml: "auto", alignItems: "center" }}>
+          <Stack direction="row" spacing={{ xs: 0.5, sm: 1 }} sx={{ ml: "auto", alignItems: "center", "& .MuiButton-root": { minWidth: { xs: "auto", sm: 64 }, px: { xs: 1, sm: 2 }, whiteSpace: "nowrap" } }}>
+            {!compact && (
+              <Button
+                component={NavLink}
+                to="/tool"
+                color="inherit"
+                sx={{ "&.active": { color: "primary.main", bgcolor: "action.selected" } }}
+              >
+                Tool
+              </Button>
+            )}
             <Button color="inherit" size="small" startIcon={<TranslateIcon />} onClick={openLanguageMenu} aria-label={t("common:language.label")}>
               {i18n.resolvedLanguage === "en" ? "EN" : "VI"}
             </Button>

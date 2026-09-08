@@ -21,7 +21,8 @@ export function loader({ request }: Route.LoaderArgs) {
 }
 
 export const links: Route.LinksFunction = () => [
-  { rel: "icon", type: "image/png", href: "/icon.png" },
+  { rel: "icon", type: "image/png", href: "/icon.png?v=marosa" },
+  { rel: "shortcut icon", href: "/favicon.ico?v=marosa" },
   { rel: "preconnect", href: "https://fonts.googleapis.com" },
   {
     rel: "preconnect",
