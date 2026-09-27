@@ -187,7 +187,7 @@ function MilestoneAnnotations({ data }: { data: MachineLogVisualization }) {
   );
 }
 
-function DetailItem({ label, children }: { label: string; children: ReactNode }) {
+export function DetailItem({ label, children }: { label: string; children: ReactNode }) {
   return (
     <Box>
       <Typography component="dt" variant="caption" color="text.secondary">
@@ -243,11 +243,14 @@ export function RoastProfileChart({ data }: { data: MachineLogVisualization }) {
             <LineChart
               dataset={data.points}
               height={480}
-              margin={{ left: 70, right: 70, top: 40, bottom: 55 }}
+              margin={{ left: 70, right: 70, top: 40, bottom: 10 }}
               xAxis={[
                 {
                   dataKey: "seconds",
                   scaleType: "linear",
+                  // Sized to its tick labels and title; the fixed default is
+                  // too short once there is a title and hides the tick labels.
+                  height: "auto",
                   label: t("roastDetail:chart.time"),
                   valueFormatter: (value) => formatDuration(Number(value)),
                 },
@@ -307,11 +310,14 @@ export function RoastProfileChart({ data }: { data: MachineLogVisualization }) {
             <LineChart
               dataset={data.points}
               height={260}
-              margin={{ left: 70, right: 30, top: 30, bottom: 50 }}
+              margin={{ left: 70, right: 30, top: 30, bottom: 10 }}
               xAxis={[
                 {
                   dataKey: "seconds",
                   scaleType: "linear",
+                  // Sized to its tick labels and title; the fixed default is
+                  // too short once there is a title and hides the tick labels.
+                  height: "auto",
                   label: t("roastDetail:chart.time"),
                   valueFormatter: (value) => formatDuration(Number(value)),
                 },
@@ -353,13 +359,32 @@ export function RoastProfileChart({ data }: { data: MachineLogVisualization }) {
 }
 
 /** Charge, turning point, dry end, both cracks and drop, as the parser found them. */
-export function RoastMilestones({ data }: { data: MachineLogVisualization }) {
+/**
+ * Milestone times and temperatures from the log. `children` adds further
+ * figures read from the same curve (e.g. development) into the same grid, so a
+ * page does not need a second card repeating the milestones.
+ */
+export function RoastMilestones({
+  data,
+  title,
+  subheader,
+  children,
+}: {
+  data: MachineLogVisualization;
+  title?: string;
+  subheader?: string;
+  children?: ReactNode;
+}) {
   const { t } = useTranslation(["common"]);
   const milestones = shownIn(data);
 
   return (
     <Card>
-      <CardHeader title={t("common:admin.milestones")} slotProps={{ title: { variant: "h6" } }} />
+      <CardHeader
+        title={title ?? t("common:admin.milestones")}
+        subheader={subheader}
+        slotProps={{ title: { variant: "h6" } }}
+      />
       <Divider />
       <CardContent
         component="dl"
@@ -384,7 +409,8 @@ export function RoastMilestones({ data }: { data: MachineLogVisualization }) {
               : ` · ${milestone.temperature.toFixed(1)} ${data.temperatureUnit}`}
           </DetailItem>
         ))}
-        {milestones.length === 0 && (
+        {children}
+        {milestones.length === 0 && !children && (
           <Typography color="text.secondary">{t("common:admin.noMilestones")}</Typography>
         )}
       </CardContent>

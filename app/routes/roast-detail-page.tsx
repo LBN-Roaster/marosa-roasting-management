@@ -12,7 +12,7 @@ import Typography from "@mui/material/Typography";
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Link, useActionData, useLoaderData, useNavigation, useSubmit } from "react-router";
-import { RoastProfile } from "~/components/roast-profile-charts";
+import { DetailItem, RoastMilestones, RoastProfileChart } from "~/components/roast-profile-charts";
 import { createSampleFromRoast, getRoast, getRoastProfile, updateRoast } from "~/lib/backend.server";
 import { isoToLocalInput, localToIso } from "~/lib/cupping";
 import type { Route } from "./+types/roast-detail-page";
@@ -80,6 +80,9 @@ export default function RoastDetailPage() {
   const [dropWeight, setDropWeight] = useState(roast.dropWeight?.toString() ?? "");
   const [roastedAt, setRoastedAt] = useState(isoToLocalInput(roast.roastedAt));
   const [toast, setToast] = useState("");
+  const developmentRatio = roast.developmentRatio != null
+    ? `${(Number(roast.developmentRatio) * 100).toFixed(1)}%`
+    : "—";
 
   // Reseed only when a different roast is opened. Depending on the loader
   // object instead would refill these inputs on every revalidation and discard
@@ -199,7 +202,8 @@ export default function RoastDetailPage() {
         </Card>
 
         <Stack spacing={2}>
-          <Card sx={{ p: { xs: 2, md: 3 } }}>
+          {/* With a profile these figures live in the milestones card under the chart. */}
+          {!profile && <Card sx={{ p: { xs: 2, md: 3 } }}>
             <Typography sx={{ fontWeight: 700 }}>{t("roasts.fromCurve")}</Typography>
             <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
               {t("roasts.fromCurveHint")}
@@ -212,10 +216,10 @@ export default function RoastDetailPage() {
               <Metric label={t("roasts.development")} value={seconds(roast.developmentSeconds)} />
               <Metric
                 label={t("roasts.developmentRatio")}
-                value={roast.developmentRatio != null ? `${(Number(roast.developmentRatio) * 100).toFixed(1)}%` : "—"}
+                value={developmentRatio}
               />
             </Box>
-          </Card>
+          </Card>}
 
           <Card sx={{ p: { xs: 2, md: 3 } }}>
             <Typography sx={{ fontWeight: 700, mb: 1.5 }}>{t("roasts.sample")}</Typography>
@@ -254,7 +258,13 @@ export default function RoastDetailPage() {
 
       <Box sx={{ mt: 3 }}>
         {profile ? (
-          <RoastProfile data={profile} />
+          <Stack spacing={3}>
+            <RoastMilestones data={profile} title={t("roasts.fromCurve")} subheader={t("roasts.fromCurveHint")}>
+              <DetailItem label={t("roasts.development")}>{seconds(roast.developmentSeconds)}</DetailItem>
+              <DetailItem label={t("roasts.developmentRatio")}>{developmentRatio}</DetailItem>
+            </RoastMilestones>
+            <RoastProfileChart data={profile} />
+          </Stack>
         ) : (
           <Alert severity="info">{t("roasts.profileUnavailable")}</Alert>
         )}

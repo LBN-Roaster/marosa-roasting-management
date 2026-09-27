@@ -158,8 +158,8 @@ export default function RoastDetailPage() {
                 <LineChart
                   dataset={roast.profile}
                   height={400}
-                  margin={{ left: 65, right: 65, top: 40, bottom: 50 }}
-                  xAxis={[{ dataKey: "seconds", scaleType: "linear", label: t("chart.time"), valueFormatter: (value) => formatDuration(Number(value)) }]}
+                  margin={{ left: 65, right: 65, top: 40, bottom: 10 }}
+                  xAxis={[{ dataKey: "seconds", scaleType: "linear", height: "auto", label: t("chart.time"), valueFormatter: (value) => formatDuration(Number(value)) }]}
                   yAxis={[
                     { id: "temperature", position: "left", min: 70, max: 240, label: t("chart.temperature") },
                     { id: "ror", position: "right", min: 0, max: 22, label: "RoR (°C/min)" },
@@ -177,8 +177,8 @@ export default function RoastDetailPage() {
                 <LineChart
                   dataset={roast.profile}
                   height={220}
-                  margin={{ left: 65, right: 25, top: 30, bottom: 45 }}
-                  xAxis={[{ dataKey: "seconds", scaleType: "linear", label: t("chart.time"), valueFormatter: (value) => formatDuration(Number(value)) }]}
+                  margin={{ left: 65, right: 25, top: 30, bottom: 10 }}
+                  xAxis={[{ dataKey: "seconds", scaleType: "linear", height: "auto", label: t("chart.time"), valueFormatter: (value) => formatDuration(Number(value)) }]}
                   yAxis={[{ ...controlPercentAxis, label: t("chart.percent") }]}
                   series={[
                     { dataKey: "burner", label: t("chart.burner"), color: "#FF9800", showMark: false, curve: "stepAfter" },
