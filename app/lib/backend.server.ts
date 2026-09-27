@@ -1,5 +1,9 @@
 import { redirect } from "react-router";
-import { authBypassEnabled, getAuthSession } from "~/lib/auth.server";
+import {
+  authBypassEnabled,
+  getAuthSession,
+  getSessionOrganizationId,
+} from "~/lib/auth.server";
 
 export type MachineStatus =
   | "IN_PRODUCTION"
@@ -292,10 +296,99 @@ function backendOrigin() {
   );
 }
 
-async function backendRequest<T>(
+export type OrganizationRole = "OWNER" | "MEMBER" | "SUPPORT";
+
+/** An organization as the signed-in user sees it; role is null for an admin who is not a member. */
+export type Organization = {
+  id: string;
+  name: string;
+  slug: string;
+  role: OrganizationRole | null;
+  canManage: boolean;
+};
+
+export type OrganizationMember = {
+  userId: string;
+  email: string;
+  name: string | null;
+  picture: string | null;
+  role: OrganizationRole;
+  joinedAt: string;
+};
+
+export type OrganizationInvite = {
+  id: string;
+  email: string;
+  role: OrganizationRole;
+  invitedAt: string;
+};
+
+export type OrganizationMembers = {
+  members: OrganizationMember[];
+  invites: OrganizationInvite[];
+};
+
+export type AdminOrganization = {
+  id: string;
+  name: string;
+  slug: string;
+  memberCount: number;
+  createdAt: string;
+};
+
+// Every loader in one navigation receives the same Request, so the organization
+// is worked out once per navigation however many backend calls follow.
+const resolvedOrganizations = new WeakMap<
+  Request,
+  Promise<{ organizations: Organization[]; active: Organization | null }>
+>();
+
+/**
+ * The caller's organizations and the one they are working in: the one chosen
+ * in this browser while it is still available to them, otherwise the first.
+ */
+export function resolveOrganizations(request: Request) {
+  let pending = resolvedOrganizations.get(request);
+  if (!pending) {
+    pending = (async () => {
+      const organizations = await backendRequest<Organization[]>(
+        request,
+        "/api/me/organizations",
+        undefined,
+        { scoped: false },
+      );
+      const chosen = await getSessionOrganizationId(request);
+      const active =
+        organizations.find((organization) => organization.id === chosen) ??
+        organizations[0] ??
+        null;
+      return { organizations, active };
+    })();
+    resolvedOrganizations.set(request, pending);
+  }
+  return pending;
+}
+
+function backendRequest<T>(
   request: Request,
   path: string,
   init?: RequestInit,
+  options: { scoped?: boolean } = {},
+): Promise<T> {
+  const pending = sendBackendRequest<T>(request, path, init, options);
+  // Some loaders hand this promise to the page un-awaited so it can stream in.
+  // When the layout fails first (backend down, redirect to login) nothing ever
+  // awaits it, and Node would crash the server on the unhandled rejection.
+  // Callers that do await it still receive the error.
+  pending.catch(() => {});
+  return pending;
+}
+
+async function sendBackendRequest<T>(
+  request: Request,
+  path: string,
+  init?: RequestInit,
+  { scoped = true }: { scoped?: boolean } = {},
 ): Promise<T> {
   const session = await getAuthSession(request);
   const token = session.get("backendToken");
@@ -304,6 +397,15 @@ async function backendRequest<T>(
   const bypass = authBypassEnabled();
   if (!token && !bypass) throw redirect("/login");
 
+  let organizationId: string | undefined;
+  if (scoped) {
+    const { active } = await resolveOrganizations(request);
+    // Someone who belongs to no roastery yet has nothing to load; the
+    // organization page explains how to get invited.
+    if (!active) throw redirect("/organization");
+    organizationId = active.id;
+  }
+
   let response: Response;
   try {
     response = await fetch(`${backendOrigin()}${path}`, {
@@ -311,6 +413,7 @@ async function backendRequest<T>(
       headers: {
         ...init?.headers,
         ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        ...(organizationId ? { "X-Organization-Id": organizationId } : {}),
       },
     });
   } catch {
@@ -349,10 +452,100 @@ function pageQuery(params?: PageParams) {
   return query ? `?${query}` : "";
 }
 
+export function getCurrentOrganization(request: Request) {
+  return backendJson<Organization>(request, "/api/organization");
+}
+
+export function renameOrganization(request: Request, name: string) {
+  return backendRequest<Organization>(request, "/api/organization", {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ name }),
+  });
+}
+
+export function getOrganizationMembers(request: Request) {
+  return backendJson<OrganizationMembers>(request, "/api/organization/members");
+}
+
+export function inviteOrganizationMember(
+  request: Request,
+  email: string,
+  role: OrganizationRole,
+) {
+  return backendRequest<OrganizationMembers>(request, "/api/organization/invites", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ email, role }),
+  });
+}
+
+export function cancelOrganizationInvite(request: Request, inviteId: string) {
+  return backendRequest<OrganizationMembers>(
+    request,
+    `/api/organization/invites/${encodeURIComponent(inviteId)}`,
+    { method: "DELETE" },
+  );
+}
+
+export function changeOrganizationMemberRole(
+  request: Request,
+  userId: string,
+  role: OrganizationRole,
+) {
+  return backendRequest<OrganizationMembers>(
+    request,
+    `/api/organization/members/${encodeURIComponent(userId)}`,
+    {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ role }),
+    },
+  );
+}
+
+export function removeOrganizationMember(request: Request, userId: string) {
+  return backendRequest<OrganizationMembers>(
+    request,
+    `/api/organization/members/${encodeURIComponent(userId)}`,
+    { method: "DELETE" },
+  );
+}
+
+export function getAdminOrganizations(request: Request) {
+  return backendRequest<AdminOrganization[]>(
+    request,
+    "/api/admin/organizations",
+    undefined,
+    { scoped: false },
+  );
+}
+
+export function createAdminOrganization(
+  request: Request,
+  payload: { name: string; slug: string; ownerEmail: string },
+) {
+  return backendRequest<AdminOrganization>(
+    request,
+    "/api/admin/organizations",
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    },
+    { scoped: false },
+  );
+}
+
+// Machines are sales inventory, not organization data.
+const unscoped = { scoped: false };
+
 export function getAdminMachines(request: Request, params?: PageParams) {
-  return backendJson<PageResponse<AdminMachine>>(
+  return backendRequest<PageResponse<AdminMachine>>(
     request,
     `/api/admin/machines${pageQuery(params)}`,
+    undefined,
+    unscoped,
   );
 }
 
@@ -361,9 +554,11 @@ export function getAdminMachine(
   machineId: string,
   params?: PageParams,
 ) {
-  return backendJson<AdminMachineDetail>(
+  return backendRequest<AdminMachineDetail>(
     request,
     `/api/admin/machines/${encodeURIComponent(machineId)}${pageQuery(params)}`,
+    undefined,
+    unscoped,
   );
 }
 
@@ -372,6 +567,7 @@ export function issueMachineApiKey(request: Request, machineId: string) {
     request,
     `/api/machines/${encodeURIComponent(machineId)}/api-keys`,
     { method: "POST" },
+    unscoped,
   );
 }
 
@@ -379,6 +575,8 @@ export function listMachineApiKeys(request: Request, machineId: string) {
   return backendRequest<MachineApiKeySummary[]>(
     request,
     `/api/machines/${encodeURIComponent(machineId)}/api-keys`,
+    undefined,
+    unscoped,
   );
 }
 
@@ -391,6 +589,7 @@ export function revokeMachineApiKey(
     request,
     `/api/machines/${encodeURIComponent(machineId)}/api-keys/${encodeURIComponent(keyId)}`,
     { method: "DELETE" },
+    unscoped,
   );
 }
 
@@ -399,9 +598,11 @@ export function getMachineLogVisualization(
   machineId: string,
   uploadId: string,
 ) {
-  return backendJson<MachineLogVisualization>(
+  return backendRequest<MachineLogVisualization>(
     request,
     `/api/admin/machines/${encodeURIComponent(machineId)}/logs/${encodeURIComponent(uploadId)}`,
+    undefined,
+    unscoped,
   );
 }
 

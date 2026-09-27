@@ -31,8 +31,11 @@ export default [
     route("cupping/:sessionId/review", "routes/cupping-review.tsx"),
     route("cupping/:sessionId/report/:sampleId", "routes/cupping-report.tsx"),
     route("settings", "routes/settings.tsx"),
+    route("organization", "routes/organization.tsx"),
+    route("organization/switch", "routes/organization-switch.ts"),
     layout("routes/admin-layout.tsx", [
       route("admin", "routes/admin-machines.tsx"),
+      route("admin/organizations", "routes/admin-organizations.tsx"),
       route("admin/machines/:machineId", "routes/admin-machine-detail.tsx"),
       route(
         "admin/machines/:machineId/api-keys",

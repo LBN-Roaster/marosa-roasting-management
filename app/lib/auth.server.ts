@@ -20,6 +20,8 @@ type AuthSessionData = {
   user: GoogleUser;
   oauthState: string;
   returnTo: string;
+  /** The roastery the user last worked in; sent to the backend on every call. */
+  organizationId: string;
 };
 
 let sessionStorage: ReturnType<
@@ -168,6 +170,19 @@ export async function requireAdmin(request: Request) {
     throw redirect("/app");
   }
   return user;
+}
+
+/** The organization chosen in this browser, if any. */
+export async function getSessionOrganizationId(request: Request) {
+  const session = await getAuthSession(request);
+  return session.get("organizationId") ?? null;
+}
+
+/** A Set-Cookie header that remembers the chosen organization. */
+export async function rememberOrganization(request: Request, organizationId: string) {
+  const session = await getAuthSession(request);
+  session.set("organizationId", organizationId);
+  return getSessionStorage().commitSession(session);
 }
 
 export async function logout(request: Request) {

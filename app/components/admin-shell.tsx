@@ -2,6 +2,7 @@ import AnalyticsOutlinedIcon from "@mui/icons-material/AnalyticsOutlined";
 import ChevronLeftIcon from "@mui/icons-material/ChevronLeft";
 import ChevronRightIcon from "@mui/icons-material/ChevronRight";
 import PrecisionManufacturingOutlinedIcon from "@mui/icons-material/PrecisionManufacturingOutlined";
+import StorefrontOutlinedIcon from "@mui/icons-material/StorefrontOutlined";
 import Box from "@mui/material/Box";
 import Chip from "@mui/material/Chip";
 import Drawer from "@mui/material/Drawer";
@@ -14,7 +15,7 @@ import Tooltip from "@mui/material/Tooltip";
 import Typography from "@mui/material/Typography";
 import { useEffect, useState, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
-import { NavLink, useRouteLoaderData } from "react-router";
+import { NavLink, useLocation, useRouteLoaderData } from "react-router";
 import type { GoogleUser } from "~/lib/auth.server";
 
 const expandedWidth = 224;
@@ -54,6 +55,9 @@ export function AdminShell({
     | { user: GoogleUser }
     | undefined;
   const isAdmin = appLayoutData?.user.role === "ADMIN";
+  const { pathname } = useLocation();
+  // Machine detail pages live under /admin/machines, the list itself at /admin.
+  const machinesActive = pathname === "/admin" || pathname.startsWith("/admin/machines");
 
   useEffect(() => {
     setExpanded(window.localStorage.getItem(drawerStorageKey) !== "false");
@@ -136,14 +140,30 @@ export function AdminShell({
             <List disablePadding component="nav" aria-label={t("navigation.admin")}>
               <Tooltip title={expanded ? "" : t("admin.machines")} placement="right">
                 <NavLink to="/admin" prefetch="intent" style={{ color: "inherit", textDecoration: "none" }}>
+                  <ListItemButton selected={machinesActive} sx={itemSx(expanded)}>
+                    <ListItemIcon sx={{ minWidth: 0, mr: expanded ? 1.5 : 0, justifyContent: "center" }}>
+                      <PrecisionManufacturingOutlinedIcon fontSize="small" />
+                    </ListItemIcon>
+                    {expanded && (
+                      <ListItemText
+                        primary={t("admin.machines")}
+                        slotProps={{ primary: { noWrap: true, sx: { fontWeight: machinesActive ? 650 : 500 } } }}
+                      />
+                    )}
+                  </ListItemButton>
+                </NavLink>
+              </Tooltip>
+
+              <Tooltip title={expanded ? "" : t("admin.organizations.nav")} placement="right">
+                <NavLink to="/admin/organizations" prefetch="intent" style={{ color: "inherit", textDecoration: "none" }}>
                   {({ isActive }) => (
                     <ListItemButton selected={isActive} sx={itemSx(expanded)}>
                       <ListItemIcon sx={{ minWidth: 0, mr: expanded ? 1.5 : 0, justifyContent: "center" }}>
-                        <PrecisionManufacturingOutlinedIcon fontSize="small" />
+                        <StorefrontOutlinedIcon fontSize="small" />
                       </ListItemIcon>
                       {expanded && (
                         <ListItemText
-                          primary={t("admin.machines")}
+                          primary={t("admin.organizations.nav")}
                           slotProps={{ primary: { noWrap: true, sx: { fontWeight: isActive ? 650 : 500 } } }}
                         />
                       )}

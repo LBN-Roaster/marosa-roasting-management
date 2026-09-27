@@ -24,6 +24,7 @@ import Typography from "@mui/material/Typography";
 import { useState, type MouseEvent, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import { Form, NavLink, useRouteLoaderData } from "react-router";
+import { OrganizationSwitcher, type AppLayoutData } from "~/components/organization-switcher";
 import type { GoogleUser } from "~/lib/auth.server";
 
 const navigation = [
@@ -51,9 +52,7 @@ function userInitials(user: GoogleUser | undefined) {
 
 export function AppShell({ children }: { children: ReactNode }) {
   const { t, i18n } = useTranslation("common");
-  const appLayoutData = useRouteLoaderData("routes/app-layout") as
-    | { user: GoogleUser }
-    | undefined;
+  const appLayoutData = useRouteLoaderData("routes/app-layout") as AppLayoutData | undefined;
   const user = appLayoutData?.user;
   const visibleNavigation = navigation.filter(
     (item) => !item.hidden && (!item.adminOnly || user?.role === "ADMIN"),
@@ -109,10 +108,7 @@ export function AppShell({ children }: { children: ReactNode }) {
             </Stack>
 
             <Stack direction="row" spacing={1.5} sx={{ ml: "auto", display: { xs: "none", md: "flex" }, alignItems: "center" }}>
-              <Box sx={{ textAlign: "right", display: { md: "none", lg: "block" } }}>
-                <Typography variant="body2" sx={{ fontWeight: 600 }}>{t("roastery.name")}</Typography>
-                <Typography variant="caption" color="text.secondary">{t("roastery.description")}</Typography>
-              </Box>
+              <OrganizationSwitcher />
               <IconButton
                 aria-label={t("account.menuLabel")}
                 aria-controls={accountAnchor ? "account-menu" : undefined}
@@ -174,6 +170,9 @@ export function AppShell({ children }: { children: ReactNode }) {
                   )}
                 </NavLink>
               ))}
+              <Box sx={{ my: 1 }}>
+                <OrganizationSwitcher fullWidth />
+              </Box>
               <Button fullWidth color="inherit" startIcon={<TranslateIcon />} onClick={openLanguageMenu} sx={{ justifyContent: "flex-start", py: 1.25, color: "text.secondary" }}>
                 {t("language.label")}: {i18n.resolvedLanguage === "vi" ? t("language.vietnamese") : t("language.english")}
               </Button>
