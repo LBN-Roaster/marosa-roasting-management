@@ -28,6 +28,7 @@ import { LineChart } from "@mui/x-charts/LineChart";
 import { useState, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import { Link, Navigate, useNavigate, useParams } from "react-router";
+import { controlPercentAxis } from "~/components/roast-profile-charts";
 import { useRoasts } from "~/contexts/roast-context";
 import type { RoastMilestone } from "~/lib/roasts";
 
@@ -178,7 +179,7 @@ export default function RoastDetailPage() {
                   height={220}
                   margin={{ left: 65, right: 25, top: 30, bottom: 45 }}
                   xAxis={[{ dataKey: "seconds", scaleType: "linear", label: t("chart.time"), valueFormatter: (value) => formatDuration(Number(value)) }]}
-                  yAxis={[{ min: 0, max: 100, label: t("chart.percent") }]}
+                  yAxis={[{ ...controlPercentAxis, label: t("chart.percent") }]}
                   series={[
                     { dataKey: "burner", label: t("chart.burner"), color: "#FF9800", showMark: false, curve: "stepAfter" },
                     { dataKey: "air", label: t("chart.air"), color: "#26C6DA", showMark: false, curve: "stepAfter" },

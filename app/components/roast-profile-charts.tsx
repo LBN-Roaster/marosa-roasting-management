@@ -16,6 +16,17 @@ export function formatDuration(seconds: number) {
   return `${seconds < 0 ? "−" : ""}${Math.floor(rounded / 60)}:${(rounded % 60).toString().padStart(2, "0")}`;
 }
 
+/**
+ * Burner, air and drum settings in percent. Headroom above 100% keeps a control
+ * held at full power off the chart frame; ticks stop at 100 because nothing
+ * above it is meaningful.
+ */
+export const controlPercentAxis = {
+  min: 0,
+  max: 110,
+  tickInterval: [0, 20, 40, 60, 80, 100],
+};
+
 const milestoneAbbreviations: Record<string, string> = {
   CHARGE: "CHARGE",
   TURNING_POINT: "TP",
@@ -37,17 +48,90 @@ function shownIn(data: MachineLogVisualization) {
     .sort((a, b) => a.seconds - b.seconds);
 }
 
+type Spot = { x: number; y: number };
+type Segment = { x1: number; y1: number; x2: number; y2: number };
+
+/** Liang–Barsky clip: does the segment pass through the (padded) rectangle? */
+function segmentHitsRect(segment: Segment, left: number, top: number, right: number, bottom: number) {
+  const dx = segment.x2 - segment.x1;
+  const dy = segment.y2 - segment.y1;
+  let t0 = 0;
+  let t1 = 1;
+  for (const [p, q] of [
+    [-dx, segment.x1 - left], [dx, right - segment.x1],
+    [-dy, segment.y1 - top], [dy, bottom - segment.y1],
+  ]) {
+    if (p === 0) {
+      if (q < 0) return false;
+    } else {
+      const r = q / p;
+      if (p < 0) t0 = Math.max(t0, r);
+      else t1 = Math.min(t1, r);
+      if (t0 > t1) return false;
+    }
+  }
+  return true;
+}
+
 /** SVG callouts share the chart's scales, so they remain anchored on resize. */
 function MilestoneAnnotations({ data }: { data: MachineLogVisualization }) {
   const { t } = useTranslation("common");
   const xScale = useXScale<"linear">();
   const yScale = useYScale<"linear">("temperature");
+  const rorScale = useYScale<"linear">("ror");
   const area = useDrawingArea();
-  const boxWidth = 76;
-  const boxHeight = 54;
+  const boxWidth = 58;
+  const boxHeight = 40;
+  const fontSize = 9.5;
+  const lineHeight = 11.5;
   const gap = 8;
-  const placed: { x: number; y: number }[] = [];
+  // Keep a little air between a callout and the curves so the line stays readable.
+  const linePadding = 4;
+  const placed: Spot[] = [];
   if (area.width < boxWidth || area.height < boxHeight) return null;
+
+  // Every plotted curve in pixel space, sorted by x (the points already are), so
+  // a callout only has to test the segments under its own horizontal span.
+  const segments: Segment[] = [];
+  for (const [key, scale] of [
+    ["beanTemperature", yScale], ["environmentTemperature", yScale], ["rateOfRise", rorScale],
+  ] as const) {
+    let previous: { x: number; y: number } | null = null;
+    for (const point of data.points) {
+      const value = point[key];
+      if (value == null || !Number.isFinite(value)) continue; // the chart connects nulls
+      const current = { x: xScale(point.seconds), y: scale(value) };
+      if (!Number.isFinite(current.x) || !Number.isFinite(current.y)) continue;
+      if (previous) segments.push({ x1: previous.x, y1: previous.y, x2: current.x, y2: current.y });
+      previous = current;
+    }
+  }
+  segments.sort((a, b) => Math.min(a.x1, a.x2) - Math.min(b.x1, b.x2));
+  const widestSegment = segments.reduce((widest, segment) => Math.max(widest, Math.abs(segment.x2 - segment.x1)), 0);
+
+  const hitsCurve = (box: Spot) => {
+    const left = box.x - linePadding;
+    const right = box.x + boxWidth + linePadding;
+    const top = box.y - linePadding;
+    const bottom = box.y + boxHeight + linePadding;
+    // Binary search for the first segment that could reach the box's left edge.
+    let low = 0;
+    let high = segments.length;
+    while (low < high) {
+      const mid = (low + high) >> 1;
+      if (Math.min(segments[mid].x1, segments[mid].x2) < left - widestSegment) low = mid + 1;
+      else high = mid;
+    }
+    for (let index = low; index < segments.length; index++) {
+      const segment = segments[index];
+      if (Math.min(segment.x1, segment.x2) > right) break;
+      if (segmentHitsRect(segment, left, top, right, bottom)) return true;
+    }
+    return false;
+  };
+  const hitsCallout = (box: Spot) => placed.some((other) =>
+    !(box.x + boxWidth + gap <= other.x || other.x + boxWidth + gap <= box.x ||
+      box.y + boxHeight + gap <= other.y || other.y + boxHeight + gap <= box.y));
 
   return (
     <g aria-label={t("admin.milestones")} style={{ pointerEvents: "none" }}>
@@ -62,26 +146,26 @@ function MilestoneAnnotations({ data }: { data: MachineLogVisualization }) {
 
         const clampX = (value: number) => Math.max(area.left, Math.min(value, area.left + area.width - boxWidth));
         const clampY = (value: number) => Math.max(area.top, Math.min(value, area.top + area.height - boxHeight));
-        const candidates = [];
-        for (let row = 0; row < Math.ceil(area.height / (boxHeight + gap)); row++) {
-          for (const direction of [1, -1]) {
-            for (const offset of [12, -boxWidth - 12, -boxWidth / 2]) {
-              candidates.push({
-                x: clampX(x + offset),
-                y: clampY(direction === 1
-                  ? y + 24 + row * (boxHeight + gap)
-                  : y - 24 - boxHeight - row * (boxHeight + gap)),
-              });
-            }
+        // Candidate spots on a grid around the milestone, nearest first, so a
+        // callout moves only as far as it must to clear the curves.
+        const candidates: Spot[] = [];
+        const step = boxHeight / 2;
+        for (let dy = -area.height; dy <= area.height; dy += step) {
+          for (let dx = -3 * boxWidth; dx <= 3 * boxWidth; dx += boxWidth / 4) {
+            candidates.push({ x: clampX(x + dx - boxWidth / 2), y: clampY(y + dy - boxHeight / 2) });
           }
         }
-        const box = candidates.find((candidate) => placed.every((other) =>
-          candidate.x + boxWidth + gap <= other.x || other.x + boxWidth + gap <= candidate.x ||
-          candidate.y + boxHeight + gap <= other.y || other.y + boxHeight + gap <= candidate.y,
-        )) ?? candidates[0];
+        const distance = (box: Spot) =>
+          Math.hypot(box.x + boxWidth / 2 - x, box.y + boxHeight / 2 - y);
+        candidates.sort((a, b) => distance(a) - distance(b));
+        const open = candidates.filter((candidate) => !hitsCallout(candidate));
+        // Prefer a spot clear of both curves and callouts; failing that, clear of
+        // callouts; failing that, the nearest spot so the milestone still shows.
+        const box = open.find((candidate) => !hitsCurve(candidate)) ?? open[0] ?? candidates[0];
         placed.push(box);
-        const anchorX = Math.max(box.x + 8, Math.min(x, box.x + boxWidth - 8));
-        const anchorY = box.y > y ? box.y : box.y + boxHeight;
+        // The leader meets the callout at the edge point nearest the milestone.
+        const anchorX = Math.max(box.x, Math.min(x, box.x + boxWidth));
+        const anchorY = Math.max(box.y, Math.min(y, box.y + boxHeight));
         const label = t(`admin.milestoneLabels.${milestone.type}`, { defaultValue: milestone.type });
         const time = formatDuration(milestone.seconds);
         const temperature = `${milestone.temperature.toFixed(1)} ${data.temperatureUnit}`;
@@ -89,12 +173,12 @@ function MilestoneAnnotations({ data }: { data: MachineLogVisualization }) {
           <g key={`${milestone.type}-${milestone.seconds}-${index}`} role="img" aria-label={`${label}, ${time}, ${temperature}`}>
             <title>{`${label} · ${time} · ${temperature}`}</title>
             <path d={`M ${x} ${y} L ${anchorX} ${anchorY}`} fill="none" stroke="#737373" strokeWidth={1.5} />
-            <circle cx={x} cy={y} r={4.5} fill="#737373" stroke="white" strokeWidth={1} />
-            <rect x={box.x} y={box.y} width={boxWidth} height={boxHeight} rx={4} fill="#424242" fillOpacity={0.94} />
-            <text x={box.x + boxWidth / 2} y={box.y + 15} textAnchor="middle" fill="white" fontSize={11} fontFamily="inherit" fontWeight={600}>
+            <circle cx={x} cy={y} r={3.5} fill="#737373" stroke="white" strokeWidth={1} />
+            <rect x={box.x} y={box.y} width={boxWidth} height={boxHeight} rx={3} fill="#424242" fillOpacity={0.94} />
+            <text x={box.x + boxWidth / 2} y={box.y + 12} textAnchor="middle" fill="white" fontSize={fontSize} fontFamily="inherit" fontWeight={600}>
               <tspan>{milestoneAbbreviations[milestone.type] ?? milestone.type}</tspan>
-              <tspan x={box.x + boxWidth / 2} dy={15}>{time}</tspan>
-              <tspan x={box.x + boxWidth / 2} dy={15}>{temperature}</tspan>
+              <tspan x={box.x + boxWidth / 2} dy={lineHeight}>{time}</tspan>
+              <tspan x={box.x + boxWidth / 2} dy={lineHeight}>{temperature}</tspan>
             </text>
           </g>
         );
@@ -232,7 +316,7 @@ export function RoastProfileChart({ data }: { data: MachineLogVisualization }) {
                   valueFormatter: (value) => formatDuration(Number(value)),
                 },
               ]}
-              yAxis={[{ min: 0, max: 100, label: t("roastDetail:chart.percent") }]}
+              yAxis={[{ ...controlPercentAxis, label: t("roastDetail:chart.percent") }]}
               series={[
                 {
                   dataKey: "burner",
