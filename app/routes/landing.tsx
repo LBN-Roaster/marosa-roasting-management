@@ -30,8 +30,16 @@ import LinearProgress from "@mui/material/LinearProgress";
 import Stack from "@mui/material/Stack";
 import Typography from "@mui/material/Typography";
 import { useTranslation } from "react-i18next";
-import { Link } from "react-router";
+import { Link, redirect } from "react-router";
 import { PublicHeader } from "~/components/public-header";
+import { getSignedInUser } from "~/lib/auth.server";
+import type { Route } from "./+types/landing";
+
+// Signed-in users skip the marketing page and go straight to their workspace.
+export async function loader({ request }: Route.LoaderArgs) {
+  if (await getSignedInUser(request)) throw redirect("/app");
+  return null;
+}
 
 export function meta() {
   return [

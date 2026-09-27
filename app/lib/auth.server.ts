@@ -118,16 +118,41 @@ const bypassUser: GoogleUser = {
   role: "ADMIN",
 };
 
-export async function requireUser(request: Request) {
+// The session cookie lives for a week, but the backend JWT inside it expires
+// sooner (auth.jwt.expiration-ms). Only the JWT's own expiry says whether the
+// backend will still accept the user, so read it rather than trust the cookie.
+function backendTokenExpired(token: string) {
+  try {
+    const payload = JSON.parse(
+      Buffer.from(token.split(".")[1] ?? "", "base64url").toString("utf8"),
+    ) as { exp?: unknown };
+    return typeof payload.exp !== "number" || payload.exp * 1000 <= Date.now();
+  } catch {
+    return true;
+  }
+}
+
+/** The signed-in user, or null when there is no session the backend would still accept. */
+export async function getSignedInUser(request: Request) {
   if (authBypassEnabled()) return bypassUser;
 
   const session = await getAuthSession(request);
+  const token = session.get("backendToken");
   const user = session.get("user");
   if (
-    !session.has("backendToken") ||
+    !token ||
+    backendTokenExpired(token) ||
     !user ||
     (user.role !== "USER" && user.role !== "ADMIN")
   ) {
+    return null;
+  }
+  return user;
+}
+
+export async function requireUser(request: Request) {
+  const user = await getSignedInUser(request);
+  if (!user) {
     const url = new URL(request.url);
     const callbackUrl = `${url.pathname}${url.search}`;
     throw redirect(
@@ -156,6 +181,17 @@ export async function logout(request: Request) {
 
 export async function startGoogleLogin(request: Request) {
   const url = new URL(request.url);
+
+  // Google always returns to APP_URL, and the state cookie is scoped to the
+  // host that set it. Starting from any other host (a Vercel deployment URL,
+  // www vs apex) would fail with invalid_state, so hop to APP_URL first.
+  // Hosts are compared rather than origins so a proxy reporting http instead
+  // of https cannot cause a redirect loop.
+  const canonical = new URL(appOrigin(request));
+  if (url.host !== canonical.host) {
+    throw redirect(`${canonical.origin}${url.pathname}${url.search}`);
+  }
+
   const session = await getAuthSession(request);
   const state = randomBytes(32).toString("base64url");
   const redirectUri = `${appOrigin(request)}/auth/google/callback`;
