@@ -1,7 +1,7 @@
 import AnalyticsOutlinedIcon from "@mui/icons-material/AnalyticsOutlined";
 import ChevronLeftIcon from "@mui/icons-material/ChevronLeft";
 import ChevronRightIcon from "@mui/icons-material/ChevronRight";
-import PrecisionManufacturingOutlinedIcon from "@mui/icons-material/PrecisionManufacturingOutlined";
+import MemoryOutlinedIcon from "@mui/icons-material/MemoryOutlined";
 import StorefrontOutlinedIcon from "@mui/icons-material/StorefrontOutlined";
 import Box from "@mui/material/Box";
 import Chip from "@mui/material/Chip";
@@ -56,8 +56,8 @@ export function AdminShell({
     | undefined;
   const isAdmin = appLayoutData?.user.role === "ADMIN";
   const { pathname } = useLocation();
-  // Machine detail pages live under /admin/machines, the list itself at /admin.
-  const machinesActive = pathname === "/admin" || pathname.startsWith("/admin/machines");
+  // Controller detail pages live under /admin/controllers, the list itself at /admin.
+  const controllersActive = pathname === "/admin" || pathname.startsWith("/admin/controllers");
 
   useEffect(() => {
     setExpanded(window.localStorage.getItem(drawerStorageKey) !== "false");
@@ -73,7 +73,7 @@ export function AdminShell({
 
   return (
     <Box>
-      {/* Full-width header band: page title / back button / machine name live here,
+      {/* Full-width header band: page title / back button / controller serial live here,
           so the sidebar always starts level with the content card below — regardless
           of how tall each page's heading is. Each header owns its own bottom spacing. */}
       {header}
@@ -138,16 +138,16 @@ export function AdminShell({
             </Box>
 
             <List disablePadding component="nav" aria-label={t("navigation.admin")}>
-              <Tooltip title={expanded ? "" : t("admin.machines")} placement="right">
+              <Tooltip title={expanded ? "" : t("admin.controllers")} placement="right">
                 <NavLink to="/admin" prefetch="intent" style={{ color: "inherit", textDecoration: "none" }}>
-                  <ListItemButton selected={machinesActive} sx={itemSx(expanded)}>
+                  <ListItemButton selected={controllersActive} sx={itemSx(expanded)}>
                     <ListItemIcon sx={{ minWidth: 0, mr: expanded ? 1.5 : 0, justifyContent: "center" }}>
-                      <PrecisionManufacturingOutlinedIcon fontSize="small" />
+                      <MemoryOutlinedIcon fontSize="small" />
                     </ListItemIcon>
                     {expanded && (
                       <ListItemText
-                        primary={t("admin.machines")}
-                        slotProps={{ primary: { noWrap: true, sx: { fontWeight: machinesActive ? 650 : 500 } } }}
+                        primary={t("admin.controllers")}
+                        slotProps={{ primary: { noWrap: true, sx: { fontWeight: controllersActive ? 650 : 500 } } }}
                       />
                     )}
                   </ListItemButton>

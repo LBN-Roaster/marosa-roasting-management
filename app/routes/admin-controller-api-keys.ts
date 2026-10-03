@@ -1,10 +1,10 @@
 import { requireAdmin } from "~/lib/auth.server";
 import {
-  issueMachineApiKey,
-  listMachineApiKeys,
-  revokeMachineApiKey,
+  issueControllerApiKey,
+  listControllerApiKeys,
+  revokeControllerApiKey,
 } from "~/lib/backend.server";
-import type { Route } from "./+types/admin-machine-api-keys";
+import type { Route } from "./+types/admin-controller-api-keys";
 
 export async function loader({ request, params }: Route.LoaderArgs) {
   await requireAdmin(request);
@@ -12,7 +12,7 @@ export async function loader({ request, params }: Route.LoaderArgs) {
     return {
       success: true as const,
       intent: "list" as const,
-      apiKeys: await listMachineApiKeys(request, params.machineId),
+      apiKeys: await listControllerApiKeys(request, params.controllerId),
     };
   } catch (error) {
     if (
@@ -44,7 +44,7 @@ export async function action({ request, params }: Route.ActionArgs) {
       return {
         success: true as const,
         intent,
-        apiKey: await issueMachineApiKey(request, params.machineId),
+        apiKey: await issueControllerApiKey(request, params.controllerId),
       };
     }
 
@@ -52,7 +52,7 @@ export async function action({ request, params }: Route.ActionArgs) {
     if (typeof keyId !== "string" || !keyId) {
       return { success: false as const, intent };
     }
-    await revokeMachineApiKey(request, params.machineId, keyId);
+    await revokeControllerApiKey(request, params.controllerId, keyId);
     return { success: true as const, intent, keyId };
   } catch (error) {
     if (
@@ -66,5 +66,5 @@ export async function action({ request, params }: Route.ActionArgs) {
   }
 }
 
-export type MachineApiKeyListData = Awaited<ReturnType<typeof loader>>;
-export type MachineApiKeyMutationData = Awaited<ReturnType<typeof action>>;
+export type ControllerApiKeyListData = Awaited<ReturnType<typeof loader>>;
+export type ControllerApiKeyMutationData = Awaited<ReturnType<typeof action>>;

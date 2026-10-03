@@ -5,12 +5,6 @@ import {
   getSessionOrganizationId,
 } from "~/lib/auth.server";
 
-export type MachineStatus =
-  | "IN_PRODUCTION"
-  | "READY_FOR_SHIPPING"
-  | "SOLD"
-  | "CONSIGNMENT";
-
 export type RoastUploadStatus =
   | "PENDING"
   | "UPLOADED"
@@ -18,15 +12,20 @@ export type RoastUploadStatus =
   | "PROCESSED"
   | "FAILED";
 
-export type AdminMachine = {
+/** A controller kit (Raspberry Pi + roasting app) as LBN admins see it. */
+export type AdminController = {
   id: string;
   serialNumber: string;
-  name: string | null;
-  status: MachineStatus;
+  organizationId: string | null;
+  organizationName: string | null;
+  roasterId: string | null;
+  roasterName: string | null;
   lastUploadAt: string | null;
+  createdAt: string;
 };
 
-export type MachineLog = {
+/** One upload from a controller. */
+export type RoastUploadLog = {
   uploadId: string;
   roastId: string | null;
   filename: string;
@@ -57,19 +56,19 @@ export type PageParams = {
   status?: string;
 };
 
-export type AdminMachineDetail = {
-  machine: AdminMachine;
-  logs: PageResponse<MachineLog>;
+export type AdminControllerDetail = {
+  controller: AdminController;
+  logs: PageResponse<RoastUploadLog>;
 };
 
-export type MachineApiKeyCreated = {
+export type ControllerApiKeyCreated = {
   keyId: string;
   token: string;
   expiresAt: string | null;
   createdAt: string;
 };
 
-export type MachineApiKeySummary = {
+export type ControllerApiKeySummary = {
   keyId: string;
   keyPrefix: string;
   expiresAt: string | null;
@@ -275,9 +274,17 @@ export type AlogMilestone = {
   temperature: number | null;
 };
 
-export type MachineLogVisualization = {
-  machine: AdminMachine;
-  log: MachineLog;
+/** Where a roast log came from: the kit that sent it and the roaster it was made on. */
+export type RoastSource = {
+  controllerId: string | null;
+  controllerSerialNumber: string | null;
+  roasterId: string | null;
+  roasterName: string | null;
+};
+
+export type RoastLogVisualization = {
+  source: RoastSource;
+  log: RoastUploadLog;
   title: string | null;
   beanName: string | null;
   temperatureUnit: "°C" | "°F";
@@ -285,7 +292,7 @@ export type MachineLogVisualization = {
   milestones: AlogMilestone[];
   /** The library coffee this roast is linked to, once confirmed. */
   sample: LibrarySample | null;
-  /** A match on the machine's bean name, offered for confirmation. */
+  /** A match on the bean name the roaster typed, offered for confirmation. */
   suggestedSample: LibrarySample | null;
 };
 
@@ -537,73 +544,166 @@ export function createAdminOrganization(
   );
 }
 
-// Machines are sales inventory, not organization data.
+// Controller kits are LBN admin data, not organization data.
 const unscoped = { scoped: false };
 
-export function getAdminMachines(request: Request, params?: PageParams) {
-  return backendRequest<PageResponse<AdminMachine>>(
+export function getAdminControllers(request: Request, params?: PageParams) {
+  return backendRequest<PageResponse<AdminController>>(
     request,
-    `/api/admin/machines${pageQuery(params)}`,
+    `/api/admin/controllers${pageQuery(params)}`,
     undefined,
     unscoped,
   );
 }
 
-export function getAdminMachine(
+export function getAdminController(
   request: Request,
-  machineId: string,
+  controllerId: string,
   params?: PageParams,
 ) {
-  return backendRequest<AdminMachineDetail>(
+  return backendRequest<AdminControllerDetail>(
     request,
-    `/api/admin/machines/${encodeURIComponent(machineId)}${pageQuery(params)}`,
+    `/api/admin/controllers/${encodeURIComponent(controllerId)}${pageQuery(params)}`,
     undefined,
     unscoped,
   );
 }
 
-export function issueMachineApiKey(request: Request, machineId: string) {
-  return backendRequest<MachineApiKeyCreated>(
+export function createAdminController(
+  request: Request,
+  payload: { serialNumber: string; organizationId: string | null },
+) {
+  return backendRequest<AdminController>(
     request,
-    `/api/machines/${encodeURIComponent(machineId)}/api-keys`,
+    "/api/admin/controllers",
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    },
+    unscoped,
+  );
+}
+
+export function issueControllerApiKey(request: Request, controllerId: string) {
+  return backendRequest<ControllerApiKeyCreated>(
+    request,
+    `/api/admin/controllers/${encodeURIComponent(controllerId)}/api-keys`,
     { method: "POST" },
     unscoped,
   );
 }
 
-export function listMachineApiKeys(request: Request, machineId: string) {
-  return backendRequest<MachineApiKeySummary[]>(
+export function listControllerApiKeys(request: Request, controllerId: string) {
+  return backendRequest<ControllerApiKeySummary[]>(
     request,
-    `/api/machines/${encodeURIComponent(machineId)}/api-keys`,
+    `/api/admin/controllers/${encodeURIComponent(controllerId)}/api-keys`,
     undefined,
     unscoped,
   );
 }
 
-export function revokeMachineApiKey(
+export function revokeControllerApiKey(
   request: Request,
-  machineId: string,
+  controllerId: string,
   keyId: string,
 ) {
   return backendRequest<void>(
     request,
-    `/api/machines/${encodeURIComponent(machineId)}/api-keys/${encodeURIComponent(keyId)}`,
+    `/api/admin/controllers/${encodeURIComponent(controllerId)}/api-keys/${encodeURIComponent(keyId)}`,
     { method: "DELETE" },
     unscoped,
   );
 }
 
-export function getMachineLogVisualization(
+export function getControllerLogVisualization(
   request: Request,
-  machineId: string,
+  controllerId: string,
   uploadId: string,
 ) {
-  return backendRequest<MachineLogVisualization>(
+  return backendRequest<RoastLogVisualization>(
     request,
-    `/api/admin/machines/${encodeURIComponent(machineId)}/logs/${encodeURIComponent(uploadId)}`,
+    `/api/admin/controllers/${encodeURIComponent(controllerId)}/logs/${encodeURIComponent(uploadId)}`,
     undefined,
     unscoped,
   );
+}
+
+/** A roastery's physical roaster, of any brand, and the kit fitted to it. */
+export type Roaster = {
+  id: string;
+  name: string;
+  brand: string | null;
+  model: string | null;
+  capacityKg: number | null;
+  location: string | null;
+  notes: string | null;
+  controller: { id: string; serialNumber: string } | null;
+  createdAt: string;
+};
+
+export type RoasterPayload = {
+  name: string;
+  brand: string | null;
+  model: string | null;
+  capacityKg: number | null;
+  location: string | null;
+  notes: string | null;
+};
+
+/** A controller kit as the roastery sees it. */
+export type OrganizationController = {
+  id: string;
+  serialNumber: string;
+  roasterId: string | null;
+  roasterName: string | null;
+};
+
+export function getRoasters(request: Request) {
+  return backendJson<Roaster[]>(request, "/api/roasters");
+}
+
+export function createRoaster(request: Request, payload: RoasterPayload) {
+  return backendRequest<Roaster>(request, "/api/roasters", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+  });
+}
+
+export function updateRoaster(request: Request, roasterId: string, payload: RoasterPayload) {
+  return backendRequest<Roaster>(request, `/api/roasters/${encodeURIComponent(roasterId)}`, {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+  });
+}
+
+export function deleteRoaster(request: Request, roasterId: string) {
+  return backendRequest<void>(request, `/api/roasters/${encodeURIComponent(roasterId)}`, {
+    method: "DELETE",
+  });
+}
+
+/** Fits a controller to a roaster; null takes the fitted one off. */
+export function installRoasterController(
+  request: Request,
+  roasterId: string,
+  controllerId: string | null,
+) {
+  return backendRequest<Roaster>(
+    request,
+    `/api/roasters/${encodeURIComponent(roasterId)}/controller`,
+    {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ controllerId }),
+    },
+  );
+}
+
+export function getOrganizationControllers(request: Request) {
+  return backendJson<OrganizationController[]>(request, "/api/controllers");
 }
 
 export function getCuppingSessions(request: Request, params?: PageParams) {
@@ -772,7 +872,10 @@ export type RoastSummary = {
   chargeWeight: number | null;
   dropWeight: number | null;
   developmentRatio: number | null;
-  machineSerialNumber: string | null;
+  /** The roaster this batch was made on; null when the kit was fitted to none. */
+  roasterId: string | null;
+  roasterName: string | null;
+  controllerSerialNumber: string | null;
   sampleId: string | null;
   sampleTag: string | null;
   sampleName: string | null;
@@ -793,8 +896,10 @@ export type RoastDetail = {
   developmentSeconds: number | null;
   developmentRatio: number | null;
   sourceRoastId: string | null;
-  machineId: string | null;
-  machineSerialNumber: string | null;
+  roasterId: string | null;
+  roasterName: string | null;
+  controllerId: string | null;
+  controllerSerialNumber: string | null;
   uploadId: string | null;
   sampleId: string | null;
   sampleTag: string | null;
@@ -824,13 +929,13 @@ export function updateRoast(request: Request, roastId: string, payload: RoastPay
 
 export function getRoasts(
   request: Request,
-  params?: PageParams & { search?: string },
+  params?: PageParams & { search?: string; roasterId?: string },
 ) {
-  const query = pageQuery(params);
-  const search = params?.search
-    ? `${query ? "&" : "?"}search=${encodeURIComponent(params.search)}`
-    : "";
-  return backendJson<PageResponse<RoastSummary>>(request, `/api/roasts${query}${search}`);
+  const search = new URLSearchParams(pageQuery(params).replace(/^\?/, ""));
+  if (params?.search) search.set("search", params.search);
+  if (params?.roasterId) search.set("roasterId", params.roasterId);
+  const query = search.toString();
+  return backendJson<PageResponse<RoastSummary>>(request, `/api/roasts${query ? `?${query}` : ""}`);
 }
 
 /** A roast as it appears on the coffee it roasted. */
@@ -842,8 +947,10 @@ export type SampleRoast = {
   chargeWeight: number | null;
   dropWeight: number | null;
   developmentRatio: number | null;
-  machineId: string | null;
-  machineSerialNumber: string | null;
+  roasterId: string | null;
+  roasterName: string | null;
+  controllerId: string | null;
+  controllerSerialNumber: string | null;
   uploadId: string | null;
 };
 
@@ -859,7 +966,7 @@ export function getSample(request: Request, sampleId: string) {
 
 /** The roast curve, addressed by roast and readable without admin rights. */
 export function getRoastProfile(request: Request, roastId: string) {
-  return backendJson<MachineLogVisualization>(
+  return backendJson<RoastLogVisualization>(
     request,
     `/api/roasts/${encodeURIComponent(roastId)}/profile`,
   );

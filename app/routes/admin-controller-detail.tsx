@@ -31,12 +31,12 @@ import {
 } from "react-router";
 import { AdminShell } from "~/components/admin-shell";
 import {
-  getAdminMachine,
-  type AdminMachine,
-  type AdminMachineDetail,
+  getAdminController,
+  type AdminController,
+  type AdminControllerDetail,
   type RoastUploadStatus,
 } from "~/lib/backend.server";
-import type { Route } from "./+types/admin-machine-detail";
+import type { Route } from "./+types/admin-controller-detail";
 
 const uploadStatuses: RoastUploadStatus[] = [
   "PENDING",
@@ -61,12 +61,12 @@ function logSortField(value: string | null): LogSortField {
 }
 
 export function meta() {
-  return [{ title: "Machine | MAROSA" }];
+  return [{ title: "Controller | MAROSA" }];
 }
 
 export async function loader({ request, params }: Route.LoaderArgs) {
   // Deferred: return the promise so the page chrome (back button) streams instantly
-  // and the machine header + logs fill in behind skeletons.
+  // and the controller header + logs fill in behind skeletons.
   // Log pagination is server-driven via ?page/?size on the URL.
   const url = new URL(request.url);
   const page = Number(url.searchParams.get("page") ?? "0");
@@ -76,7 +76,7 @@ export async function loader({ request, params }: Route.LoaderArgs) {
   const direction: SortDirection =
     url.searchParams.get("direction") === "asc" ? "asc" : "desc";
   return {
-    detail: getAdminMachine(request, params.machineId, {
+    detail: getAdminController(request, params.controllerId, {
       page,
       size,
       status: status === "all" ? undefined : status,
@@ -112,7 +112,7 @@ const expandedTableCardSx = {
   },
 };
 
-function MachineHeaderSkeleton() {
+function ControllerHeaderSkeleton() {
   return (
     <Box>
       <Typography
@@ -131,7 +131,7 @@ function MachineHeaderSkeleton() {
   );
 }
 
-function MachineHeader({ machine }: { machine: AdminMachine }) {
+function ControllerHeader({ controller }: { controller: AdminController }) {
   const { t, i18n } = useTranslation("common");
   const locale = i18n.resolvedLanguage ?? "en";
 
@@ -142,17 +142,20 @@ function MachineHeader({ machine }: { machine: AdminMachine }) {
         color="text.secondary"
         sx={{ display: "block", mb: 0.5, lineHeight: 1.5 }}
       >
-        {t("admin.machineDetails")}
+        {t("admin.controllerDetails")}
       </Typography>
-      <Typography variant="h4" component="h1">
-        {machine.name || machine.serialNumber}
+      <Typography variant="h4" component="h1" sx={{ fontFamily: "monospace" }}>
+        {controller.serialNumber}
       </Typography>
       <Stack direction={{ xs: "column", sm: "row" }} spacing={{ xs: 0.5, sm: 2 }} sx={{ mt: 1 }}>
         <Typography color="text.secondary">
-          {t("admin.serialNumber")}: <Box component="span" sx={{ fontFamily: "monospace", color: "text.primary", fontWeight: 700 }}>{machine.serialNumber}</Box>
+          {t("admin.roastery")}: <Box component="span" sx={{ color: "text.primary", fontWeight: 600 }}>{controller.organizationName ?? t("admin.unlinked")}</Box>
         </Typography>
         <Typography color="text.secondary">
-          {t("admin.lastUpload")}: {formatDate(machine.lastUploadAt, locale)}
+          {t("admin.roaster")}: <Box component="span" sx={{ color: "text.primary", fontWeight: 600 }}>{controller.roasterName ?? "—"}</Box>
+        </Typography>
+        <Typography color="text.secondary">
+          {t("admin.lastUpload")}: {formatDate(controller.lastUploadAt, locale)}
         </Typography>
       </Stack>
     </Box>
@@ -181,12 +184,12 @@ function LogsCard({
   sortBy,
   direction,
 }: {
-  detail: AdminMachineDetail;
+  detail: AdminControllerDetail;
   status: LogStatusFilter;
   sortBy: LogSortField;
   direction: SortDirection;
 }) {
-  const { machine, logs } = detail;
+  const { controller, logs } = detail;
   const { t, i18n } = useTranslation("common");
   const navigate = useNavigate();
   const [, setSearchParams] = useSearchParams();
@@ -313,12 +316,12 @@ function LogsCard({
                 role="link"
                 tabIndex={0}
                 onClick={() =>
-                  void navigate(`/admin/machines/${machine.id}/logs/${log.uploadId}`)
+                  void navigate(`/admin/controllers/${controller.id}/logs/${log.uploadId}`)
                 }
                 onKeyDown={(event) => {
                   if (event.key === "Enter" || event.key === " ") {
                     event.preventDefault();
-                    void navigate(`/admin/machines/${machine.id}/logs/${log.uploadId}`);
+                    void navigate(`/admin/controllers/${controller.id}/logs/${log.uploadId}`);
                   }
                 }}
                 sx={{ cursor: "pointer", "&:last-child td": { borderBottom: 0 } }}
@@ -381,7 +384,7 @@ function LogsCard({
   );
 }
 
-export default function AdminMachineDetailPage() {
+export default function AdminControllerDetailPage() {
   const { detail, status, sortBy, direction } = useLoaderData<typeof loader>();
   const { t } = useTranslation("common");
 
@@ -398,9 +401,9 @@ export default function AdminMachineDetailPage() {
           >
             {t("admin.back")}
           </Button>
-          <Suspense fallback={<MachineHeaderSkeleton />}>
+          <Suspense fallback={<ControllerHeaderSkeleton />}>
             <Await resolve={detail}>
-              {(resolved) => <MachineHeader machine={resolved.machine} />}
+              {(resolved) => <ControllerHeader controller={resolved.controller} />}
             </Await>
           </Suspense>
         </Box>

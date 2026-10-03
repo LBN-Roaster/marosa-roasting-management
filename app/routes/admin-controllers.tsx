@@ -1,5 +1,6 @@
 import CheckIcon from "@mui/icons-material/Check";
 import ContentCopyIcon from "@mui/icons-material/ContentCopy";
+import AddIcon from "@mui/icons-material/Add";
 import KeyIcon from "@mui/icons-material/Key";
 import SearchIcon from "@mui/icons-material/Search";
 import Alert from "@mui/material/Alert";
@@ -11,13 +12,10 @@ import DialogActions from "@mui/material/DialogActions";
 import DialogContent from "@mui/material/DialogContent";
 import DialogContentText from "@mui/material/DialogContentText";
 import DialogTitle from "@mui/material/DialogTitle";
-import FormControl from "@mui/material/FormControl";
 import IconButton from "@mui/material/IconButton";
 import InputAdornment from "@mui/material/InputAdornment";
-import InputLabel from "@mui/material/InputLabel";
 import LinearProgress from "@mui/material/LinearProgress";
 import MenuItem from "@mui/material/MenuItem";
-import Select from "@mui/material/Select";
 import Skeleton from "@mui/material/Skeleton";
 import Stack from "@mui/material/Stack";
 import Table from "@mui/material/Table";
@@ -29,49 +27,49 @@ import TablePagination from "@mui/material/TablePagination";
 import TableRow from "@mui/material/TableRow";
 import TableSortLabel from "@mui/material/TableSortLabel";
 import TextField from "@mui/material/TextField";
+import Chip from "@mui/material/Chip";
+import Snackbar from "@mui/material/Snackbar";
 import Typography from "@mui/material/Typography";
 import { Suspense, useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import {
   Await,
+  Form,
+  useActionData,
   useFetcher,
   useLoaderData,
   useNavigate,
+  useNavigation,
   useSearchParams,
 } from "react-router";
 import { AdminShell } from "~/components/admin-shell";
 import { PageHeading } from "~/components/page-heading";
+import { requireAdmin } from "~/lib/auth.server";
 import {
-  getAdminMachines,
-  type AdminMachine,
-  type MachineApiKeyCreated,
-  type MachineApiKeySummary,
-  type MachineStatus,
+  createAdminController,
+  getAdminControllers,
+  getAdminOrganizations,
+  type AdminController,
+  type AdminOrganization,
+  type ControllerApiKeyCreated,
+  type ControllerApiKeySummary,
   type PageResponse,
 } from "~/lib/backend.server";
 import type {
-  MachineApiKeyListData,
-  MachineApiKeyMutationData,
-} from "./admin-machine-api-keys";
-import type { Route } from "./+types/admin-machines";
+  ControllerApiKeyListData,
+  ControllerApiKeyMutationData,
+} from "./admin-controller-api-keys";
+import type { Route } from "./+types/admin-controllers";
 
-const statuses: MachineStatus[] = [
-  "IN_PRODUCTION",
-  "READY_FOR_SHIPPING",
-  "SOLD",
-  "CONSIGNMENT",
-];
-
-type MachineSortField = "serialNumber" | "name" | "lastUploadAt";
+type ControllerSortField = "serialNumber" | "lastUploadAt";
 type SortDirection = "asc" | "desc";
 
-function machineSortField(value: string | null): MachineSortField {
-  if (value === "name" || value === "lastUploadAt") return value;
-  return "serialNumber";
+function controllerSortField(value: string | null): ControllerSortField {
+  return value === "lastUploadAt" ? value : "serialNumber";
 }
 
 export function meta() {
-  return [{ title: "Admin · Machines | MAROSA" }];
+  return [{ title: "Admin · Controllers | MAROSA" }];
 }
 
 export async function loader({ request }: Route.LoaderArgs) {
@@ -80,19 +78,40 @@ export async function loader({ request }: Route.LoaderArgs) {
   const url = new URL(request.url);
   const page = Number(url.searchParams.get("page") ?? "0");
   const size = Number(url.searchParams.get("size") ?? "20");
-  const sortBy = machineSortField(url.searchParams.get("sortBy"));
+  const sortBy = controllerSortField(url.searchParams.get("sortBy"));
   const direction: SortDirection =
     url.searchParams.get("direction") === "desc" ? "desc" : "asc";
   return {
-    machines: getAdminMachines(request, {
+    controllers: getAdminControllers(request, {
       page,
       size,
       sort: sortBy,
       direction,
     }),
+    // A short list, needed by the register dialog as soon as it opens.
+    organizations: await getAdminOrganizations(request),
     sortBy,
     direction,
   };
+}
+
+export async function action({ request }: Route.ActionArgs) {
+  await requireAdmin(request);
+  const formData = await request.formData();
+  const organizationId = String(formData.get("organizationId") ?? "");
+  try {
+    await createAdminController(request, {
+      serialNumber: String(formData.get("serialNumber") ?? "").trim(),
+      organizationId: organizationId || null,
+    });
+    return { error: null };
+  } catch (error) {
+    if (error instanceof Response && error.status === 409) return { error: "serialTaken" as const };
+    if (error instanceof Response && error.status >= 400 && error.status < 500) {
+      return { error: "registerFailed" as const };
+    }
+    throw error;
+  }
 }
 
 function formatDate(value: string | null, locale: string) {
@@ -103,7 +122,7 @@ function formatDate(value: string | null, locale: string) {
   }).format(new Date(value));
 }
 
-function MachinesTableSkeleton() {
+function ControllersTableSkeleton() {
   return (
     <Box sx={{ p: 2 }}>
       {Array.from({ length: 8 }).map((_, index) => (
@@ -113,21 +132,21 @@ function MachinesTableSkeleton() {
   );
 }
 
-function MachineApiKeyDialog({
-  machine,
+function ControllerApiKeyDialog({
+  controller,
   open,
   onClose,
 }: {
-  machine: AdminMachine;
+  controller: AdminController;
   open: boolean;
   onClose: () => void;
 }) {
   const { t, i18n } = useTranslation("common");
   const locale = i18n.resolvedLanguage ?? "en";
-  const listFetcher = useFetcher<MachineApiKeyListData>();
-  const mutationFetcher = useFetcher<MachineApiKeyMutationData>();
-  const resourcePath = `/admin/machines/${encodeURIComponent(machine.id)}/api-keys`;
-  const [issued, setIssued] = useState<MachineApiKeyCreated | null>(null);
+  const listFetcher = useFetcher<ControllerApiKeyListData>();
+  const mutationFetcher = useFetcher<ControllerApiKeyMutationData>();
+  const resourcePath = `/admin/controllers/${encodeURIComponent(controller.id)}/api-keys`;
+  const [issued, setIssued] = useState<ControllerApiKeyCreated | null>(null);
   const [revoked, setRevoked] = useState(false);
   const [deleted, setDeleted] = useState(false);
   const [copied, setCopied] = useState(false);
@@ -203,7 +222,7 @@ function MachineApiKeyDialog({
     );
   }
 
-  function confirmAndRevoke(apiKey: MachineApiKeySummary) {
+  function confirmAndRevoke(apiKey: ControllerApiKeySummary) {
     const label = `rsk_${apiKey.keyPrefix}_…`;
     if (!window.confirm(t("admin.apiKey.deleteConfirm", { key: label }))) {
       return;
@@ -233,10 +252,10 @@ function MachineApiKeyDialog({
       onClose={resetAndClose}
       maxWidth="sm"
       fullWidth
-      aria-labelledby="machine-api-key-title"
+      aria-labelledby="controller-api-key-title"
     >
       <DialogTitle
-        id="machine-api-key-title"
+        id="controller-api-key-title"
         sx={{ display: "flex", gap: 1, alignItems: "center" }}
       >
         <KeyIcon fontSize="small" />
@@ -253,7 +272,7 @@ function MachineApiKeyDialog({
               color: "text.primary",
             }}
           >
-            {machine.serialNumber}
+            {controller.serialNumber}
           </Box>
           {t("admin.apiKey.description")}
         </DialogContentText>
@@ -421,38 +440,34 @@ function MachineApiKeyDialog({
   );
 }
 
-function MachinesTable({
+function ControllersTable({
   page,
   search,
-  status,
   sortBy,
   direction,
   onOpen,
   onApiKey,
 }: {
-  page: PageResponse<AdminMachine>;
+  page: PageResponse<AdminController>;
   search: string;
-  status: MachineStatus | "all";
-  sortBy: MachineSortField;
+  sortBy: ControllerSortField;
   direction: SortDirection;
-  onOpen: (machineId: string) => void;
-  onApiKey: (machine: AdminMachine) => void;
+  onOpen: (controllerId: string) => void;
+  onApiKey: (controller: AdminController) => void;
 }) {
   const { t, i18n } = useTranslation("common");
   const locale = i18n.resolvedLanguage ?? "en";
   const [, setSearchParams] = useSearchParams();
 
-  // Client-side search/status filters only the current page of results.
+  // Client-side search filters only the current page of results.
   const filtered = useMemo(() => {
     const query = search.trim().toLocaleLowerCase();
-    return page.content.filter((machine) => {
-      const matchesSearch =
-        !query ||
-        machine.serialNumber.toLocaleLowerCase().includes(query) ||
-        machine.name?.toLocaleLowerCase().includes(query);
-      return matchesSearch && (status === "all" || machine.status === status);
-    });
-  }, [page.content, search, status]);
+    if (!query) return page.content;
+    return page.content.filter((controller) =>
+      [controller.serialNumber, controller.organizationName, controller.roasterName]
+        .some((value) => value?.toLocaleLowerCase().includes(query)),
+    );
+  }, [page.content, search]);
 
   function changePage(next: number) {
     setSearchParams(
@@ -475,7 +490,7 @@ function MachinesTable({
     );
   }
 
-  function changeSort(field: MachineSortField) {
+  function changeSort(field: ControllerSortField) {
     const nextDirection: SortDirection =
       sortBy === field
         ? direction === "asc"
@@ -495,7 +510,7 @@ function MachinesTable({
     );
   }
 
-  function sortableHeader(field: MachineSortField, label: string) {
+  function sortableHeader(field: ControllerSortField, label: string) {
     return (
       <TableSortLabel
         active={sortBy === field}
@@ -510,13 +525,14 @@ function MachinesTable({
   return (
     <>
       <TableContainer>
-        <Table aria-label={t("admin.machines")}>
+        <Table aria-label={t("admin.controllers")}>
           <TableHead>
             <TableRow>
               <TableCell>
                 {sortableHeader("serialNumber", t("admin.serialNumber"))}
               </TableCell>
-              <TableCell>{sortableHeader("name", t("admin.name"))}</TableCell>
+              <TableCell>{t("admin.roastery")}</TableCell>
+              <TableCell>{t("admin.roaster")}</TableCell>
               <TableCell>
                 {sortableHeader("lastUploadAt", t("admin.lastUpload"))}
               </TableCell>
@@ -524,27 +540,32 @@ function MachinesTable({
             </TableRow>
           </TableHead>
           <TableBody>
-            {filtered.map((machine) => (
+            {filtered.map((controller) => (
               <TableRow
                 hover
-                key={machine.id}
+                key={controller.id}
                 role="link"
                 tabIndex={0}
-                onClick={() => onOpen(machine.id)}
+                onClick={() => onOpen(controller.id)}
                 onKeyDown={(event) => {
                   if (event.key === "Enter" || event.key === " ") {
                     event.preventDefault();
-                    onOpen(machine.id);
+                    onOpen(controller.id);
                   }
                 }}
                 sx={{ cursor: "pointer", "&:last-child td": { borderBottom: 0 } }}
               >
                 <TableCell sx={{ fontFamily: "monospace", fontWeight: 700 }}>
-                  {machine.serialNumber}
+                  {controller.serialNumber}
                 </TableCell>
-                <TableCell>{machine.name || "—"}</TableCell>
                 <TableCell>
-                  {formatDate(machine.lastUploadAt, locale) ?? (
+                  {controller.organizationName ?? (
+                    <Chip size="small" variant="outlined" label={t("admin.unlinked")} />
+                  )}
+                </TableCell>
+                <TableCell>{controller.roasterName ?? "—"}</TableCell>
+                <TableCell>
+                  {formatDate(controller.lastUploadAt, locale) ?? (
                     <Typography component="span" variant="body2" color="text.secondary">
                       {t("admin.noUpload")}
                     </Typography>
@@ -558,7 +579,7 @@ function MachinesTable({
                   <Button
                     size="small"
                     startIcon={<KeyIcon />}
-                    onClick={() => onApiKey(machine)}
+                    onClick={() => onApiKey(controller)}
                   >
                     {t("admin.apiKey.action")}
                   </Button>
@@ -567,8 +588,8 @@ function MachinesTable({
             ))}
             {filtered.length === 0 && (
               <TableRow>
-                <TableCell colSpan={4} align="center" sx={{ py: 8, color: "text.secondary" }}>
-                  {t("admin.noMachines")}
+                <TableCell colSpan={5} align="center" sx={{ py: 8, color: "text.secondary" }}>
+                  {t("admin.noControllers")}
                 </TableCell>
               </TableRow>
             )}
@@ -588,29 +609,112 @@ function MachinesTable({
   );
 }
 
-export default function AdminMachinesPage() {
-  const { machines, sortBy, direction } = useLoaderData<typeof loader>();
+/** Registers a kit before it ships, optionally already linked to the roastery that bought it. */
+function RegisterControllerDialog({
+  organizations,
+  open,
+  onClose,
+}: {
+  organizations: AdminOrganization[];
+  open: boolean;
+  onClose: () => void;
+}) {
+  const { t } = useTranslation("common");
+  const actionData = useActionData<typeof action>();
+  const navigation = useNavigation();
+  const [organizationId, setOrganizationId] = useState("");
+
+  return (
+    <Dialog open={open} onClose={onClose} fullWidth maxWidth="sm">
+      <Form method="post">
+        <DialogTitle>{t("admin.register.title")}</DialogTitle>
+        <DialogContent>
+          <Stack spacing={2.5} sx={{ pt: 1 }}>
+            <DialogContentText>{t("admin.register.description")}</DialogContentText>
+            {actionData?.error && <Alert severity="error">{t(`admin.register.${actionData.error}`)}</Alert>}
+            <TextField
+              name="serialNumber"
+              label={t("admin.serialNumber")}
+              required
+              autoFocus
+              slotProps={{ htmlInput: { maxLength: 255 } }}
+            />
+            <TextField
+              select
+              name="organizationId"
+              label={t("admin.roastery")}
+              value={organizationId}
+              onChange={(event) => setOrganizationId(event.target.value)}
+              helperText={t("admin.register.roasteryHelp")}
+              slotProps={{ select: { displayEmpty: true }, inputLabel: { shrink: true } }}
+            >
+              <MenuItem value="">{t("admin.unlinked")}</MenuItem>
+              {organizations.map((organization) => (
+                <MenuItem key={organization.id} value={organization.id}>
+                  {organization.name}
+                </MenuItem>
+              ))}
+            </TextField>
+          </Stack>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={onClose}>{t("actions.cancel")}</Button>
+          <Button type="submit" variant="contained" disabled={navigation.state !== "idle"}>
+            {t("admin.register.submit")}
+          </Button>
+        </DialogActions>
+      </Form>
+    </Dialog>
+  );
+}
+
+export default function AdminControllersPage() {
+  const { controllers, organizations, sortBy, direction } = useLoaderData<typeof loader>();
+  const actionData = useActionData<typeof action>();
   const { t } = useTranslation("common");
   const navigate = useNavigate();
   const [search, setSearch] = useState("");
-  const [status, setStatus] = useState<MachineStatus | "all">("all");
-  const [apiKeyMachine, setApiKeyMachine] = useState<AdminMachine | null>(null);
+  const [apiKeyController, setApiKeyController] = useState<AdminController | null>(null);
+  const [registering, setRegistering] = useState(false);
+  const [toast, setToast] = useState("");
 
-  function openMachine(machineId: string) {
-    void navigate(`/admin/machines/${machineId}`);
+  useEffect(() => {
+    if (actionData && !actionData.error) {
+      setRegistering(false);
+      setToast(t("admin.register.done"));
+    }
+  }, [actionData, t]);
+
+  function openController(controllerId: string) {
+    void navigate(`/admin/controllers/${controllerId}`);
   }
 
   return (
     <>
-      {apiKeyMachine && (
-        <MachineApiKeyDialog
-          machine={apiKeyMachine}
+      {apiKeyController && (
+        <ControllerApiKeyDialog
+          controller={apiKeyController}
           open
-          onClose={() => setApiKeyMachine(null)}
+          onClose={() => setApiKeyController(null)}
         />
       )}
+      <RegisterControllerDialog
+        organizations={organizations}
+        open={registering}
+        onClose={() => setRegistering(false)}
+      />
       <AdminShell
-        header={<PageHeading title={t("admin.title")} description={t("admin.subtitle")} />}
+        header={
+          <PageHeading
+            title={t("admin.title")}
+            description={t("admin.subtitle")}
+            actions={
+              <Button variant="contained" startIcon={<AddIcon />} onClick={() => setRegistering(true)}>
+                {t("admin.register.title")}
+              </Button>
+            }
+          />
+        }
       >
         <Card>
           <Stack
@@ -633,40 +737,25 @@ export default function AdminMachinesPage() {
                 },
               }}
             />
-            <FormControl sx={{ minWidth: 190 }}>
-              <InputLabel>{t("admin.status")}</InputLabel>
-              <Select
-                value={status}
-                label={t("admin.status")}
-                onChange={(event) => setStatus(event.target.value as MachineStatus | "all")}
-              >
-                <MenuItem value="all">{t("admin.allStatuses")}</MenuItem>
-                {statuses.map((value) => (
-                  <MenuItem key={value} value={value}>
-                    {t(`admin.statusLabels.${value}`)}
-                  </MenuItem>
-                ))}
-              </Select>
-            </FormControl>
           </Stack>
 
-          <Suspense fallback={<MachinesTableSkeleton />}>
-            <Await resolve={machines}>
+          <Suspense fallback={<ControllersTableSkeleton />}>
+            <Await resolve={controllers}>
               {(page) => (
-                <MachinesTable
+                <ControllersTable
                   page={page}
                   search={search}
-                  status={status}
                   sortBy={sortBy}
                   direction={direction}
-                  onOpen={openMachine}
-                  onApiKey={setApiKeyMachine}
+                  onOpen={openController}
+                  onApiKey={setApiKeyController}
                 />
               )}
             </Await>
           </Suspense>
         </Card>
       </AdminShell>
+      <Snackbar open={Boolean(toast)} autoHideDuration={4000} onClose={() => setToast("")} message={toast} />
     </>
   );
 }

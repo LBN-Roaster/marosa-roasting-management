@@ -82,7 +82,7 @@ function RoastRow({ roast, locale, onUnlink, busy }: {
     roast.batchNumber && `${t("library.batch")} ${roast.batchNumber}`,
     roast.chargeWeight != null && `${roast.chargeWeight} → ${roast.dropWeight ?? "?"}`,
     roast.developmentRatio != null && `DTR ${(Number(roast.developmentRatio) * 100).toFixed(1)}%`,
-    roast.machineSerialNumber,
+    roast.roasterName ?? roast.controllerSerialNumber,
   ].filter(Boolean);
 
   return (

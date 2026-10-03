@@ -24,7 +24,7 @@ import {
   useSubmit,
 } from "react-router";
 import { PageHeading } from "~/components/page-heading";
-import { createSampleFromRoast, getRoasts } from "~/lib/backend.server";
+import { createSampleFromRoast, getRoasters, getRoasts } from "~/lib/backend.server";
 import type { Route } from "./+types/roasts";
 
 export function meta() {
@@ -39,17 +39,19 @@ export async function loader({ request }: Route.LoaderArgs) {
   // one out of the drum.
   const direction = url.searchParams.get("direction") === "asc" ? "asc" : "desc";
   const search = url.searchParams.get("search") ?? "";
-  return {
-    roasts: await getRoasts(request, {
+  const roasterId = url.searchParams.get("roasterId") ?? "";
+  const [roasts, roasters] = await Promise.all([
+    getRoasts(request, {
       page: Number(url.searchParams.get("page") ?? "0"),
       size: pageSize,
       sort: "roastedAt",
       direction,
       search: search || undefined,
+      roasterId: roasterId || undefined,
     }),
-    search,
-    direction,
-  };
+    getRoasters(request),
+  ]);
+  return { roasts, roasters, search, roasterId, direction };
 }
 
 export async function action({ request }: Route.ActionArgs) {
@@ -66,7 +68,7 @@ export async function action({ request }: Route.ActionArgs) {
 }
 
 export default function RoastsPage() {
-  const { roasts, search: appliedSearch, direction } = useLoaderData<typeof loader>();
+  const { roasts, roasters, search: appliedSearch, roasterId, direction } = useLoaderData<typeof loader>();
   const actionData = useActionData<typeof action>();
   const { t, i18n } = useTranslation(["cupping", "common"]);
   const navigation = useNavigation();
@@ -124,6 +126,21 @@ export default function RoastsPage() {
             },
           }}
         />
+        {roasters.length > 0 && (
+          <TextField
+            select
+            value={roasterId}
+            label={t("roasts.roaster")}
+            onChange={(event) => applyParams({ roasterId: event.target.value, page: null })}
+            slotProps={{ select: { displayEmpty: true }, inputLabel: { shrink: true } }}
+            sx={{ minWidth: 190 }}
+          >
+            <MenuItem value="">{t("roasts.allRoasters")}</MenuItem>
+            {roasters.map((roaster) => (
+              <MenuItem key={roaster.id} value={roaster.id}>{roaster.name}</MenuItem>
+            ))}
+          </TextField>
+        )}
         <TextField
           select
           value={direction}
@@ -144,7 +161,7 @@ export default function RoastsPage() {
               roast.chargeWeight != null && `${roast.chargeWeight} → ${roast.dropWeight ?? "?"}`,
               roast.developmentRatio != null &&
                 `DTR ${(Number(roast.developmentRatio) * 100).toFixed(1)}%`,
-              roast.machineSerialNumber,
+              roast.roasterName ?? roast.controllerSerialNumber,
             ].filter(Boolean);
 
             return (

@@ -139,7 +139,7 @@ export default function RoastDetailPage() {
             {roast.beanName || t("roasts.unnamed")}
           </Typography>
           <Typography variant="body2" color="text.secondary">
-            {roast.machineSerialNumber}
+            {roast.roasterName ?? roast.controllerSerialNumber}
             {roast.sourceRoastId ? ` · ${roast.sourceRoastId}` : ""}
           </Typography>
         </Box>

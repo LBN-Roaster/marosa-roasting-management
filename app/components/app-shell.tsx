@@ -5,6 +5,7 @@ import LogoutOutlinedIcon from "@mui/icons-material/LogoutOutlined";
 import MenuIcon from "@mui/icons-material/Menu";
 import CoffeeOutlinedIcon from "@mui/icons-material/CoffeeOutlined";
 import LocalFireDepartmentOutlinedIcon from "@mui/icons-material/LocalFireDepartmentOutlined";
+import PrecisionManufacturingOutlinedIcon from "@mui/icons-material/PrecisionManufacturingOutlined";
 import ScienceOutlinedIcon from "@mui/icons-material/ScienceOutlined";
 import SettingsOutlinedIcon from "@mui/icons-material/SettingsOutlined";
 import AdminPanelSettingsOutlinedIcon from "@mui/icons-material/AdminPanelSettingsOutlined";
@@ -30,6 +31,7 @@ import type { GoogleUser } from "~/lib/auth.server";
 const navigation = [
   { to: "/app", labelKey: "navigation.home", icon: InboxOutlinedIcon, end: true, hidden: true },
   { to: "/recipes", labelKey: "navigation.recipes", icon: BookOutlinedIcon, hidden: true },
+  { to: "/roasters", labelKey: "navigation.roasters", icon: PrecisionManufacturingOutlinedIcon },
   { to: "/roasts", labelKey: "navigation.roasts", icon: LocalFireDepartmentOutlinedIcon },
   { to: "/cupping", labelKey: "navigation.cupping", icon: ScienceOutlinedIcon },
   { to: "/samples", labelKey: "navigation.samples", icon: CoffeeOutlinedIcon },

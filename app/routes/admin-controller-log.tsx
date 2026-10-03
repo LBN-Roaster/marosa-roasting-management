@@ -19,13 +19,13 @@ import MenuItem from "@mui/material/MenuItem";
 import TextField from "@mui/material/TextField";
 import {
   getLibrarySamples,
-  getMachineLogVisualization,
+  getControllerLogVisualization,
   linkRoastSample,
   type LibrarySample,
-  type MachineLogVisualization,
+  type RoastLogVisualization,
   type RoastUploadStatus,
 } from "~/lib/backend.server";
-import type { Route } from "./+types/admin-machine-log";
+import type { Route } from "./+types/admin-controller-log";
 
 export function meta() {
   return [{ title: "Log visualization | MAROSA" }];
@@ -33,9 +33,9 @@ export function meta() {
 
 export async function loader({ request, params }: Route.LoaderArgs) {
   return {
-    visualization: getMachineLogVisualization(
+    visualization: getControllerLogVisualization(
       request,
-      params.machineId,
+      params.controllerId,
       params.uploadId,
     ),
     library: getLibrarySamples(request, { size: 200 }).then((page) => page.content),
@@ -57,8 +57,8 @@ export async function action({ request }: Route.ActionArgs) {
 }
 
 /**
- * Ties this roast to the coffee it roasted, so a batch off the machine can be
- * traced to how it cupped. The bean name the machine recorded is free text, so
+ * Ties this roast to the coffee it roasted, so a batch off the roaster can be
+ * traced to how it cupped. The bean name the roasting app recorded is free text, so
  * a name match is only ever offered as a suggestion to confirm.
  */
 function SampleLink({
@@ -171,7 +171,7 @@ function VisualizationContent({
   data,
   library,
 }: {
-  data: MachineLogVisualization;
+  data: RoastLogVisualization;
   library: LibrarySample[];
 }) {
   const { t } = useTranslation(["common", "roastDetail"]);
@@ -202,7 +202,9 @@ function VisualizationContent({
           />
         </Stack>
         <Typography color="text.secondary" sx={{ mt: 1 }}>
-          {data.machine.name || data.machine.serialNumber} · {data.log.filename}
+          {[data.source.roasterName, data.source.controllerSerialNumber, data.log.filename]
+            .filter(Boolean)
+            .join(" · ")}
         </Typography>
       </Box>
 
@@ -229,7 +231,7 @@ function VisualizationContent({
             {data.points.length.toLocaleString()}
           </DetailItem>
           <DetailItem label={t("common:admin.serialNumber")}>
-            {data.machine.serialNumber}
+            {data.source.controllerSerialNumber ?? "—"}
           </DetailItem>
         </CardContent>
       </Card>
@@ -247,9 +249,9 @@ function VisualizationContent({
   );
 }
 
-export default function AdminMachineLogPage() {
+export default function AdminControllerLogPage() {
   const { visualization, library } = useLoaderData<typeof loader>();
-  const { machineId } = useParams();
+  const { controllerId } = useParams();
   const { t } = useTranslation("common");
 
   return (
@@ -258,12 +260,12 @@ export default function AdminMachineLogPage() {
         <Box>
           <Button
             component={Link}
-            to={`/admin/machines/${machineId}`}
+            to={`/admin/controllers/${controllerId}`}
             prefetch="intent"
             startIcon={<ArrowBackIcon />}
             sx={{ px: 0.5 }}
           >
-            {t("admin.backToMachine")}
+            {t("admin.backToController")}
           </Button>
         </Box>
         <Suspense fallback={<VisualizationSkeleton />}>
