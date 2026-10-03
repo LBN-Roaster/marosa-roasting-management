@@ -20,6 +20,7 @@ export default [
     route("recipes/:recipeId", "routes/recipe-detail.tsx"),
     route("recipes/:recipeId/edit", "routes/recipe-edit.tsx"),
     route("roasters", "routes/roasters.tsx"),
+    route("roasters/:roasterId", "routes/roaster-detail.tsx"),
     route("roasts", "routes/roasts.tsx"),
     route("roasts/:roastId", "routes/roast-detail-page.tsx"),
     route("samples", "routes/samples.tsx"),

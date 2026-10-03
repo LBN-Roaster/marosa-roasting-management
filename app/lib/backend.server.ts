@@ -647,7 +647,9 @@ export function getControllerLogVisualization(
   );
 }
 
-/** A roastery's physical roaster, of any brand, and the kit fitted to it. */
+export type RoasterStatus = "ACTIVE" | "IDLE" | "OFFLINE" | "NO_CONTROLLER";
+
+/** A roastery's physical roaster, of any brand, the kit fitted to it, and its recent activity. */
 export type Roaster = {
   id: string;
   name: string;
@@ -657,7 +659,28 @@ export type Roaster = {
   location: string | null;
   notes: string | null;
   controller: { id: string; serialNumber: string } | null;
+  status: RoasterStatus;
+  /** The latest upload failed or has been stuck too long. */
+  uploadProblem: boolean;
+  lastRoastAt: string | null;
+  /** When the fitted controller last reached the backend. */
+  lastSeenAt: string | null;
+  roastsToday: number;
+  roastsThisWeek: number;
   createdAt: string;
+};
+
+/** Totals for one roaster over local days from..to; weights are as typed, without a unit. */
+export type RoasterStats = {
+  from: string;
+  to: string;
+  roastCount: number;
+  totalChargeWeight: number | null;
+  totalDropWeight: number | null;
+  averageWeightLossPercent: number | null;
+  averageDevelopmentRatio: number | null;
+  averageCuppingScore: number | null;
+  cuppedRoastCount: number;
 };
 
 export type RoasterPayload = {
@@ -679,6 +702,38 @@ export type OrganizationController = {
 
 export function getRoasters(request: Request) {
   return backendJson<Roaster[]>(request, "/api/roasters");
+}
+
+export function getRoaster(request: Request, roasterId: string) {
+  return backendJson<Roaster>(request, `/api/roasters/${encodeURIComponent(roasterId)}`);
+}
+
+export function getRoasterStats(
+  request: Request,
+  roasterId: string,
+  period?: { from: string; to: string },
+) {
+  const query = period ? `?${new URLSearchParams(period).toString()}` : "";
+  return backendJson<RoasterStats>(
+    request,
+    `/api/roasters/${encodeURIComponent(roasterId)}/stats${query}`,
+  );
+}
+
+/** Uploads from the roaster's fitted controller, newest first. */
+export function getRoasterUploads(
+  request: Request,
+  roasterId: string,
+  params?: { status?: RoastUploadStatus; size?: number },
+) {
+  const search = new URLSearchParams();
+  if (params?.status) search.set("status", params.status);
+  if (params?.size != null) search.set("size", String(params.size));
+  const query = search.toString();
+  return backendJson<PageResponse<RoastUploadLog>>(
+    request,
+    `/api/roasters/${encodeURIComponent(roasterId)}/uploads${query ? `?${query}` : ""}`,
+  );
 }
 
 export function createRoaster(request: Request, payload: RoasterPayload) {

@@ -23,6 +23,8 @@ import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Link, useActionData, useLoaderData, useNavigation, useRouteLoaderData, useSubmit } from "react-router";
 import { PageHeading } from "~/components/page-heading";
+import { formatWhen } from "~/lib/roastery-time";
+import { RoasterStatusChip, UploadProblemChip } from "~/components/roaster-status-chip";
 import type { AppLayoutData } from "~/components/organization-switcher";
 import {
   claimController,
@@ -235,7 +237,8 @@ export default function RoastersPage() {
   const actionData = useActionData<typeof action>();
   const navigation = useNavigation();
   const submit = useSubmit();
-  const { t } = useTranslation("common");
+  const { t, i18n } = useTranslation("common");
+  const locale = i18n.resolvedLanguage === "vi" ? "vi-VN" : "en-GB";
   const { canManage, canRelease } = usePermissions();
   const [draft, setDraft] = useState<Draft | null>(null);
   const [claiming, setClaiming] = useState(false);
@@ -320,7 +323,16 @@ export default function RoastersPage() {
               <Card key={roaster.id} variant="outlined" sx={{ p: { xs: 2, sm: 2.5 } }}>
                 <Stack direction="row" spacing={1} sx={{ alignItems: "flex-start" }}>
                   <Box sx={{ flex: 1, minWidth: 0 }}>
-                    <Typography component="h2" variant="h6" noWrap>{roaster.name}</Typography>
+                    <Typography
+                      component={Link}
+                      to={`/roasters/${encodeURIComponent(roaster.id)}`}
+                      prefetch="intent"
+                      variant="h6"
+                      noWrap
+                      sx={{ display: "block", color: "text.primary", textDecoration: "none", "&:hover": { textDecoration: "underline" } }}
+                    >
+                      {roaster.name}
+                    </Typography>
                     <Typography variant="body2" color="text.secondary">
                       {specs.length ? specs.join(" · ") : t("roasters.noDetails")}
                     </Typography>
@@ -343,6 +355,18 @@ export default function RoastersPage() {
                       </IconButton>
                     </>
                   )}
+                </Stack>
+
+                <Stack direction="row" sx={{ mt: 1.5, flexWrap: "wrap", gap: 1, alignItems: "center" }}>
+                  <RoasterStatusChip status={roaster.status} />
+                  {roaster.uploadProblem && <UploadProblemChip />}
+                  <Typography variant="caption" color="text.secondary">
+                    {roaster.lastRoastAt
+                      ? t("roasters.activity.lastRoast", { when: formatWhen(roaster.lastRoastAt, locale) })
+                      : t("roasters.activity.noRoasts")}
+                    {" · "}
+                    {t("roasters.activity.counts", { today: roaster.roastsToday, week: roaster.roastsThisWeek })}
+                  </Typography>
                 </Stack>
 
                 <Stack
