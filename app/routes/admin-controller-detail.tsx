@@ -1,5 +1,6 @@
 import ArrowBackIcon from "@mui/icons-material/ArrowBack";
 import DescriptionOutlinedIcon from "@mui/icons-material/DescriptionOutlined";
+import Alert from "@mui/material/Alert";
 import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
 import Card from "@mui/material/Card";
@@ -19,19 +20,27 @@ import TableHead from "@mui/material/TableHead";
 import TablePagination from "@mui/material/TablePagination";
 import TableRow from "@mui/material/TableRow";
 import TableSortLabel from "@mui/material/TableSortLabel";
+import TextField from "@mui/material/TextField";
 import Typography from "@mui/material/Typography";
-import { Suspense } from "react";
+import { Suspense, useState } from "react";
 import { useTranslation } from "react-i18next";
 import {
   Await,
+  Form,
   Link,
+  useActionData,
   useLoaderData,
   useNavigate,
+  useNavigation,
   useSearchParams,
 } from "react-router";
 import { AdminShell } from "~/components/admin-shell";
+import { requireAdmin } from "~/lib/auth.server";
 import {
+  changeAdminControllerOrganization,
   getAdminController,
+  getAdminOrganizations,
+  type AdminOrganization,
   type AdminController,
   type AdminControllerDetail,
   type RoastUploadStatus,
@@ -83,10 +92,25 @@ export async function loader({ request, params }: Route.LoaderArgs) {
       sort: sortBy,
       direction,
     }),
+    // A short list, needed by the roastery control as soon as the header renders.
+    organizations: await getAdminOrganizations(request),
     status,
     sortBy,
     direction,
   };
+}
+
+export async function action({ request, params }: Route.ActionArgs) {
+  await requireAdmin(request);
+  const formData = await request.formData();
+  const organizationId = String(formData.get("organizationId") ?? "");
+  try {
+    await changeAdminControllerOrganization(request, params.controllerId, organizationId || null);
+    return { error: false };
+  } catch (error) {
+    if (error instanceof Response && error.status >= 400 && error.status < 500) return { error: true };
+    throw error;
+  }
 }
 
 function formatDate(value: string | null, locale: string) {
@@ -131,7 +155,58 @@ function ControllerHeaderSkeleton() {
   );
 }
 
-function ControllerHeader({ controller }: { controller: AdminController }) {
+/**
+ * Moves the kit to another roastery or unlinks it. It comes off its roaster,
+ * which belongs to the old roastery; its past roasts stay where they were made.
+ */
+function RoasteryControl({
+  controller,
+  organizations,
+}: {
+  controller: AdminController;
+  organizations: AdminOrganization[];
+}) {
+  const { t } = useTranslation("common");
+  const actionData = useActionData<typeof action>();
+  const navigation = useNavigation();
+  const [organizationId, setOrganizationId] = useState(controller.organizationId ?? "");
+  const unchanged = organizationId === (controller.organizationId ?? "");
+
+  return (
+    <Form method="post">
+      <Stack direction={{ xs: "column", sm: "row" }} spacing={1.5} sx={{ mt: 2.5, alignItems: { sm: "flex-start" } }}>
+        <TextField
+          select
+          size="small"
+          name="organizationId"
+          label={t("admin.roastery")}
+          value={organizationId}
+          onChange={(event) => setOrganizationId(event.target.value)}
+          helperText={t("admin.changeRoastery.help")}
+          slotProps={{ select: { displayEmpty: true }, inputLabel: { shrink: true } }}
+          sx={{ minWidth: 260, maxWidth: 420 }}
+        >
+          <MenuItem value="">{t("admin.unlinked")}</MenuItem>
+          {organizations.map((organization) => (
+            <MenuItem key={organization.id} value={organization.id}>{organization.name}</MenuItem>
+          ))}
+        </TextField>
+        <Button type="submit" variant="outlined" disabled={unchanged || navigation.state !== "idle"}>
+          {t("admin.changeRoastery.submit")}
+        </Button>
+      </Stack>
+      {actionData?.error && <Alert severity="error" sx={{ mt: 1.5 }}>{t("admin.changeRoastery.failed")}</Alert>}
+    </Form>
+  );
+}
+
+function ControllerHeader({
+  controller,
+  organizations,
+}: {
+  controller: AdminController;
+  organizations: AdminOrganization[];
+}) {
   const { t, i18n } = useTranslation("common");
   const locale = i18n.resolvedLanguage ?? "en";
 
@@ -158,6 +233,8 @@ function ControllerHeader({ controller }: { controller: AdminController }) {
           {t("admin.lastUpload")}: {formatDate(controller.lastUploadAt, locale)}
         </Typography>
       </Stack>
+      {/* Keyed by roastery so the picker resets after a move is saved. */}
+      <RoasteryControl key={controller.organizationId ?? "none"} controller={controller} organizations={organizations} />
     </Box>
   );
 }
@@ -385,7 +462,7 @@ function LogsCard({
 }
 
 export default function AdminControllerDetailPage() {
-  const { detail, status, sortBy, direction } = useLoaderData<typeof loader>();
+  const { detail, organizations, status, sortBy, direction } = useLoaderData<typeof loader>();
   const { t } = useTranslation("common");
 
   return (
@@ -403,7 +480,7 @@ export default function AdminControllerDetailPage() {
           </Button>
           <Suspense fallback={<ControllerHeaderSkeleton />}>
             <Await resolve={detail}>
-              {(resolved) => <ControllerHeader controller={resolved.controller} />}
+              {(resolved) => <ControllerHeader controller={resolved.controller} organizations={organizations} />}
             </Await>
           </Suspense>
         </Box>

@@ -585,6 +585,24 @@ export function createAdminController(
   );
 }
 
+/** Moves a kit to another roastery; null unlinks it. */
+export function changeAdminControllerOrganization(
+  request: Request,
+  controllerId: string,
+  organizationId: string | null,
+) {
+  return backendRequest<AdminController>(
+    request,
+    `/api/admin/controllers/${encodeURIComponent(controllerId)}/organization`,
+    {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ organizationId }),
+    },
+    unscoped,
+  );
+}
+
 export function issueControllerApiKey(request: Request, controllerId: string) {
   return backendRequest<ControllerApiKeyCreated>(
     request,
@@ -704,6 +722,30 @@ export function installRoasterController(
 
 export function getOrganizationControllers(request: Request) {
   return backendJson<OrganizationController[]>(request, "/api/controllers");
+}
+
+/**
+ * Links the kit showing this code to the active roastery, optionally fitting
+ * it to an existing roaster or a new one named here.
+ */
+export function claimController(
+  request: Request,
+  payload: { code: string; roasterId: string | null; newRoasterName: string | null },
+) {
+  return backendRequest<OrganizationController>(request, "/api/controllers/claim", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+  });
+}
+
+/** Hands a kit back so it can be claimed again; its roasts stay with this roastery. */
+export function releaseController(request: Request, controllerId: string) {
+  return backendRequest<void>(
+    request,
+    `/api/controllers/${encodeURIComponent(controllerId)}/release`,
+    { method: "POST" },
+  );
 }
 
 export function getCuppingSessions(request: Request, params?: PageParams) {

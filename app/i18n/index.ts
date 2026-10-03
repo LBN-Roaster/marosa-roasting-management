@@ -21,7 +21,28 @@ const resources = {
         viewRoasts: "View roasts",
         empty: "This roastery has no roasters yet. An owner or support member can add them.",
         emptyManage: "No roasters yet. Add the roasting machines in this roastery, then fit a controller to each one.",
-        noControllers: "This roastery has no controller kits yet. Ask LBN to link your kit to this roastery.",
+        noControllers: "No controller kits yet. Turn on the kit, then enter the code it shows with “Add controller”.",
+        controllers: {
+          title: "Controllers",
+          empty: "This roastery has no controller kits yet.",
+          notFitted: "Not fitted to a roaster",
+        },
+        claim: {
+          title: "Add controller",
+          description: "Turn on the controller kit. It shows an 8-character code on its screen for 10 minutes; enter it here to link the kit to this roastery.",
+          code: "Code on the controller's screen",
+          fitTo: "Fit to roaster",
+          fitLater: "Decide later",
+          newRoaster: "A new roaster…",
+          submit: "Add controller",
+          done: "Controller added",
+        },
+        release: {
+          action: "Release",
+          title: "Release controller {{serial}}?",
+          body: "It leaves this roastery and its roaster, and can be added again with a new code. Roasts it already uploaded stay here.",
+          confirm: "Release",
+        },
         saved: "Saved",
         fields: {
           name: "Name",
@@ -42,6 +63,9 @@ const resources = {
           nameTaken: "A roaster with this name already exists.",
           forbidden: "Only an owner or support member can change roasters.",
           failed: "That did not work. Please try again.",
+          invalidCode: "That code is wrong or has expired. Ask the controller for a new one.",
+          tooManyAttempts: "Too many wrong codes. Wait 15 minutes and try again.",
+          alreadyClaimed: "That controller already belongs to a roastery.",
         },
       },
       organization: {
@@ -113,6 +137,11 @@ const resources = {
         roastery: "Roastery",
         roaster: "Roaster",
         unlinked: "Not linked",
+        changeRoastery: {
+          help: "Moving takes it off its roaster. Roasts it already uploaded stay with the old roastery.",
+          submit: "Change roastery",
+          failed: "The roastery could not be changed.",
+        },
         register: {
           title: "Register controller",
           description: "Register a controller kit before it ships, then generate its API key for the Raspberry Pi.",
@@ -999,7 +1028,28 @@ const resources = {
         viewRoasts: "Xem mẻ rang",
         empty: "Nhà rang chưa có máy rang nào. Chủ sở hữu hoặc thành viên hỗ trợ có thể thêm máy.",
         emptyManage: "Chưa có máy rang. Hãy thêm các máy rang của nhà rang, rồi lắp bộ điều khiển cho từng máy.",
-        noControllers: "Nhà rang chưa có bộ điều khiển nào. Hãy liên hệ LBN để liên kết bộ điều khiển với nhà rang.",
+        noControllers: "Chưa có bộ điều khiển nào. Hãy bật bộ điều khiển, rồi nhập mã hiện trên màn hình bằng nút “Thêm bộ điều khiển”.",
+        controllers: {
+          title: "Bộ điều khiển",
+          empty: "Nhà rang chưa có bộ điều khiển nào.",
+          notFitted: "Chưa lắp vào máy rang",
+        },
+        claim: {
+          title: "Thêm bộ điều khiển",
+          description: "Bật bộ điều khiển. Màn hình sẽ hiện mã 8 ký tự trong 10 phút; nhập mã vào đây để liên kết bộ điều khiển với nhà rang.",
+          code: "Mã trên màn hình bộ điều khiển",
+          fitTo: "Lắp vào máy rang",
+          fitLater: "Để sau",
+          newRoaster: "Máy rang mới…",
+          submit: "Thêm bộ điều khiển",
+          done: "Đã thêm bộ điều khiển",
+        },
+        release: {
+          action: "Trả lại",
+          title: "Trả lại bộ điều khiển {{serial}}?",
+          body: "Bộ điều khiển sẽ rời nhà rang và máy rang hiện tại, và có thể được thêm lại bằng mã mới. Các mẻ rang đã tải lên vẫn ở lại nhà rang.",
+          confirm: "Trả lại",
+        },
         saved: "Đã lưu",
         fields: {
           name: "Tên",
@@ -1020,6 +1070,9 @@ const resources = {
           nameTaken: "Đã có máy rang trùng tên.",
           forbidden: "Chỉ chủ sở hữu hoặc thành viên hỗ trợ mới thay đổi được máy rang.",
           failed: "Không thực hiện được. Vui lòng thử lại.",
+          invalidCode: "Mã không đúng hoặc đã hết hạn. Hãy lấy mã mới trên bộ điều khiển.",
+          tooManyAttempts: "Nhập sai mã quá nhiều lần. Vui lòng thử lại sau 15 phút.",
+          alreadyClaimed: "Bộ điều khiển này đã thuộc một nhà rang.",
         },
       },
       organization: {
@@ -1091,6 +1144,11 @@ const resources = {
         roastery: "Nhà rang",
         roaster: "Máy rang",
         unlinked: "Chưa liên kết",
+        changeRoastery: {
+          help: "Khi chuyển, bộ điều khiển sẽ được tháo khỏi máy rang. Các mẻ rang đã tải lên vẫn thuộc nhà rang cũ.",
+          submit: "Đổi nhà rang",
+          failed: "Không đổi được nhà rang.",
+        },
         register: {
           title: "Đăng ký bộ điều khiển",
           description: "Đăng ký bộ điều khiển trước khi giao, sau đó tạo API key cho Raspberry Pi.",

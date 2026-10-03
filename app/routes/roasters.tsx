@@ -25,12 +25,15 @@ import { Link, useActionData, useLoaderData, useNavigation, useRouteLoaderData, 
 import { PageHeading } from "~/components/page-heading";
 import type { AppLayoutData } from "~/components/organization-switcher";
 import {
+  claimController,
   createRoaster,
   deleteRoaster,
   getOrganizationControllers,
   getRoasters,
   installRoasterController,
+  releaseController,
   updateRoaster,
+  type OrganizationController,
   type Roaster,
   type RoasterPayload,
 } from "~/lib/backend.server";
@@ -48,7 +51,13 @@ export async function loader({ request }: Route.LoaderArgs) {
   return { roasters, controllers };
 }
 
-type ActionError = "nameTaken" | "forbidden" | "failed";
+type ActionError =
+  | "nameTaken"
+  | "forbidden"
+  | "failed"
+  | "invalidCode"
+  | "tooManyAttempts"
+  | "alreadyClaimed";
 
 export async function action({ request }: Route.ActionArgs) {
   const formData = await request.formData();
@@ -64,13 +73,27 @@ export async function action({ request }: Route.ActionArgs) {
     } else if (intent === "install") {
       const controllerId = String(formData.get("controllerId") ?? "");
       await installRoasterController(request, roasterId, controllerId || null);
+    } else if (intent === "claim") {
+      const fitTo = String(formData.get("fitTo") ?? "");
+      await claimController(request, {
+        code: String(formData.get("code") ?? ""),
+        roasterId: fitTo && fitTo !== "new" ? fitTo : null,
+        newRoasterName: fitTo === "new" ? String(formData.get("newRoasterName") ?? "").trim() : null,
+      });
+    } else if (intent === "release") {
+      await releaseController(request, String(formData.get("controllerId") ?? ""));
     } else {
       return { intent, error: "failed" as ActionError };
     }
     return { intent, error: null };
   } catch (error) {
     if (!(error instanceof Response) || error.status < 400 || error.status >= 500) throw error;
-    const byStatus: Record<number, ActionError> = { 403: "forbidden", 409: "nameTaken" };
+    // A claim's 409 means the kit already has a roastery: the page checks a new
+    // roaster's name against the list before sending, so it is never that.
+    const byStatus: Record<number, ActionError> =
+      intent === "claim"
+        ? { 403: "forbidden", 404: "invalidCode", 409: "alreadyClaimed", 429: "tooManyAttempts" }
+        : { 403: "forbidden", 409: "nameTaken" };
     return { intent, error: byStatus[error.status] ?? ("failed" as ActionError) };
   }
 }
@@ -99,11 +122,112 @@ function draftOf(roaster: Roaster): Draft {
   };
 }
 
-/** Owners, support staff and platform admins set up roasters; members only view them. */
-function useCanManageRoasters() {
+/**
+ * Owners, support staff and platform admins set up roasters and claim kits;
+ * only owners and platform admins hand a kit back. Members only view.
+ */
+function usePermissions() {
   const layout = useRouteLoaderData("routes/app-layout") as AppLayoutData | undefined;
   const role = layout?.activeOrganization?.role;
-  return layout?.user.role === "ADMIN" || role === "OWNER" || role === "SUPPORT";
+  const admin = layout?.user.role === "ADMIN";
+  return {
+    canManage: admin || role === "OWNER" || role === "SUPPORT",
+    canRelease: admin || role === "OWNER",
+  };
+}
+
+/** Takes the code shown on the Pi's screen and links that kit to this roastery. */
+function ClaimControllerDialog({
+  open,
+  roasters,
+  onClose,
+}: {
+  open: boolean;
+  roasters: Roaster[];
+  onClose: () => void;
+}) {
+  const { t } = useTranslation("common");
+  const actionData = useActionData<typeof action>();
+  const navigation = useNavigation();
+  const submit = useSubmit();
+  const [code, setCode] = useState("");
+  const [fitTo, setFitTo] = useState("");
+  const [newRoasterName, setNewRoasterName] = useState("");
+
+  const nameTaken =
+    fitTo === "new" &&
+    roasters.some((roaster) => roaster.name.toLocaleLowerCase() === newRoasterName.trim().toLocaleLowerCase());
+  const ready =
+    code.replace(/[^A-Za-z0-9]/g, "").length === 8 &&
+    (fitTo !== "new" || (newRoasterName.trim() !== "" && !nameTaken));
+  const claimError = actionData?.intent === "claim" ? actionData.error : null;
+
+  useEffect(() => {
+    if (open) {
+      setCode("");
+      setFitTo("");
+      setNewRoasterName("");
+    }
+  }, [open]);
+
+  return (
+    <Dialog open={open} onClose={onClose} fullWidth maxWidth="sm">
+      <DialogTitle>{t("roasters.claim.title")}</DialogTitle>
+      <DialogContent>
+        <Stack spacing={2.5} sx={{ pt: 1 }}>
+          <DialogContentText>{t("roasters.claim.description")}</DialogContentText>
+          {claimError && <Alert severity="error">{t(`roasters.errors.${claimError}`)}</Alert>}
+          <TextField
+            label={t("roasters.claim.code")}
+            value={code}
+            onChange={(event) => setCode(event.target.value.toUpperCase())}
+            placeholder="XXXX-XXXX"
+            required
+            autoFocus
+            slotProps={{ htmlInput: { maxLength: 12, autoCapitalize: "characters", spellCheck: false, style: { fontFamily: "monospace", letterSpacing: "0.15em" } } }}
+          />
+          <TextField
+            select
+            label={t("roasters.claim.fitTo")}
+            value={fitTo}
+            onChange={(event) => setFitTo(event.target.value)}
+            slotProps={{ select: { displayEmpty: true }, inputLabel: { shrink: true } }}
+          >
+            <MenuItem value="">{t("roasters.claim.fitLater")}</MenuItem>
+            {roasters
+              .filter((roaster) => !roaster.controller)
+              .map((roaster) => (
+                <MenuItem key={roaster.id} value={roaster.id}>{roaster.name}</MenuItem>
+              ))}
+            <MenuItem value="new">{t("roasters.claim.newRoaster")}</MenuItem>
+          </TextField>
+          {fitTo === "new" && (
+            <TextField
+              label={t("roasters.fields.name")}
+              value={newRoasterName}
+              onChange={(event) => setNewRoasterName(event.target.value)}
+              required
+              error={nameTaken}
+              helperText={nameTaken ? t("roasters.errors.nameTaken") : t("roasters.fields.nameHelp")}
+              slotProps={{ htmlInput: { maxLength: 255 } }}
+            />
+          )}
+        </Stack>
+      </DialogContent>
+      <DialogActions>
+        <Button onClick={onClose}>{t("actions.cancel")}</Button>
+        <Button
+          variant="contained"
+          disabled={!ready || navigation.state !== "idle"}
+          onClick={() =>
+            void submit({ intent: "claim", code, fitTo, newRoasterName }, { method: "post" })
+          }
+        >
+          {t("roasters.claim.submit")}
+        </Button>
+      </DialogActions>
+    </Dialog>
+  );
 }
 
 export default function RoastersPage() {
@@ -112,8 +236,10 @@ export default function RoastersPage() {
   const navigation = useNavigation();
   const submit = useSubmit();
   const { t } = useTranslation("common");
-  const canManage = useCanManageRoasters();
+  const { canManage, canRelease } = usePermissions();
   const [draft, setDraft] = useState<Draft | null>(null);
+  const [claiming, setClaiming] = useState(false);
+  const [releasing, setReleasing] = useState<OrganizationController | null>(null);
   const [deleting, setDeleting] = useState<Roaster | null>(null);
   const [toast, setToast] = useState("");
 
@@ -122,15 +248,17 @@ export default function RoastersPage() {
   useEffect(() => {
     if (!actionData) return;
     if (actionData.error) {
-      // A taken name is shown inside the open form instead.
-      if (!(actionData.intent === "save" && actionData.error === "nameTaken")) {
+      // A taken name and a failed claim are shown inside the open dialog instead.
+      if (!(actionData.intent === "save" && actionData.error === "nameTaken") && actionData.intent !== "claim") {
         setToast(t(`roasters.errors.${actionData.error}`));
       }
       return;
     }
-    setToast(t("roasters.saved"));
+    setToast(t(actionData.intent === "claim" ? "roasters.claim.done" : "roasters.saved"));
     if (actionData.intent === "save") setDraft(null);
     if (actionData.intent === "delete") setDeleting(null);
+    if (actionData.intent === "claim") setClaiming(false);
+    if (actionData.intent === "release") setReleasing(null);
   }, [actionData, t]);
 
   function save() {
@@ -162,9 +290,14 @@ export default function RoastersPage() {
         description={t("roasters.description")}
         actions={
           canManage && (
-            <Button variant="contained" startIcon={<AddIcon />} onClick={() => setDraft(emptyDraft)}>
-              {t("roasters.add")}
-            </Button>
+            <>
+              <Button variant="outlined" startIcon={<MemoryOutlinedIcon />} onClick={() => setClaiming(true)}>
+                {t("roasters.claim.title")}
+              </Button>
+              <Button variant="contained" startIcon={<AddIcon />} onClick={() => setDraft(emptyDraft)}>
+                {t("roasters.add")}
+              </Button>
+            </>
           )
         }
       />
@@ -262,9 +395,66 @@ export default function RoastersPage() {
         </Box>
       )}
 
-      {canManage && controllers.length === 0 && roasters.length > 0 && (
-        <Alert severity="info" sx={{ mt: 2 }}>{t("roasters.noControllers")}</Alert>
+      <Typography component="h2" variant="h6" sx={{ mt: 4, mb: 1.5 }}>
+        {t("roasters.controllers.title")}
+      </Typography>
+      {controllers.length === 0 ? (
+        <Alert severity="info">{canManage ? t("roasters.noControllers") : t("roasters.controllers.empty")}</Alert>
+      ) : (
+        <Card variant="outlined">
+          <Stack divider={<Box sx={{ borderTop: 1, borderColor: "divider" }} />}>
+            {controllers.map((controller) => (
+              <Stack
+                key={controller.id}
+                direction="row"
+                spacing={1.5}
+                sx={{ px: { xs: 2, sm: 2.5 }, py: 1.5, alignItems: "center" }}
+              >
+                <MemoryOutlinedIcon fontSize="small" color="action" />
+                <Box sx={{ flex: 1, minWidth: 0 }}>
+                  <Typography variant="body2" sx={{ fontFamily: "monospace", fontWeight: 700 }}>
+                    {controller.serialNumber}
+                  </Typography>
+                  <Typography variant="caption" color="text.secondary">
+                    {controller.roasterName
+                      ? t("roasters.fittedTo", { name: controller.roasterName })
+                      : t("roasters.controllers.notFitted")}
+                  </Typography>
+                </Box>
+                {canRelease && (
+                  <Button size="small" color="error" disabled={busy} onClick={() => setReleasing(controller)}>
+                    {t("roasters.release.action")}
+                  </Button>
+                )}
+              </Stack>
+            ))}
+          </Stack>
+        </Card>
       )}
+
+      <ClaimControllerDialog open={claiming} roasters={roasters} onClose={() => setClaiming(false)} />
+
+      <Dialog open={Boolean(releasing)} onClose={() => setReleasing(null)}>
+        {releasing && (
+          <>
+            <DialogTitle>{t("roasters.release.title", { serial: releasing.serialNumber })}</DialogTitle>
+            <DialogContent>
+              <DialogContentText>{t("roasters.release.body")}</DialogContentText>
+            </DialogContent>
+            <DialogActions>
+              <Button onClick={() => setReleasing(null)}>{t("actions.cancel")}</Button>
+              <Button
+                color="error"
+                variant="contained"
+                disabled={busy}
+                onClick={() => void submit({ intent: "release", controllerId: releasing.id }, { method: "post" })}
+              >
+                {t("roasters.release.confirm")}
+              </Button>
+            </DialogActions>
+          </>
+        )}
+      </Dialog>
 
       <Dialog open={Boolean(draft)} onClose={() => setDraft(null)} fullWidth maxWidth="sm">
         {draft && (
