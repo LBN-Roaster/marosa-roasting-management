@@ -1,9 +1,13 @@
 import ArrowCircleLeftOutlinedIcon from "@mui/icons-material/ArrowCircleLeftOutlined";
+import CheckIcon from "@mui/icons-material/Check";
 import CoffeeOutlinedIcon from "@mui/icons-material/CoffeeOutlined";
+import ContentCopyIcon from "@mui/icons-material/ContentCopy";
+import PublicOutlinedIcon from "@mui/icons-material/PublicOutlined";
 import Alert from "@mui/material/Alert";
 import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
 import Card from "@mui/material/Card";
+import IconButton from "@mui/material/IconButton";
 import Snackbar from "@mui/material/Snackbar";
 import Stack from "@mui/material/Stack";
 import TextField from "@mui/material/TextField";
@@ -13,7 +17,14 @@ import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Link, useActionData, useLoaderData, useNavigation, useSubmit } from "react-router";
 import { DetailItem, RoastMilestones, RoastProfileChart } from "~/components/roast-profile-charts";
-import { createSampleFromRoast, getRoast, getRoastProfile, updateRoast } from "~/lib/backend.server";
+import {
+  createSampleFromRoast,
+  getRoast,
+  getRoastProfile,
+  shareRoast,
+  stopSharingRoast,
+  updateRoast,
+} from "~/lib/backend.server";
 import { isoToLocalInput, localToIso } from "~/lib/cupping";
 import type { Route } from "./+types/roast-detail-page";
 
@@ -28,7 +39,9 @@ export async function loader({ params, request }: Route.LoaderArgs) {
     // is still worth showing and editing, so the charts drop out instead.
     getRoastProfile(request, params.roastId).catch(() => null),
   ]);
-  return { roast, profile };
+  // The address the roasting app also prints in its QR codes.
+  const shareBase = (process.env.APP_URL ?? new URL(request.url).origin).replace(/\/$/, "");
+  return { roast, profile, shareBase };
 }
 
 export async function action({ params, request }: Route.ActionArgs) {
@@ -37,6 +50,14 @@ export async function action({ params, request }: Route.ActionArgs) {
     if (formData.get("intent") === "createSample") {
       const sample = await createSampleFromRoast(request, params.roastId);
       return { created: sample.tag };
+    }
+    if (formData.get("intent") === "share") {
+      await shareRoast(request, params.roastId);
+      return { shared: true };
+    }
+    if (formData.get("intent") === "stopSharing") {
+      await stopSharingRoast(request, params.roastId);
+      return { unshared: true };
     }
     await updateRoast(request, params.roastId, JSON.parse(String(formData.get("payload"))));
     return { saved: true };
@@ -67,7 +88,7 @@ function seconds(value: number | null) {
 }
 
 export default function RoastDetailPage() {
-  const { roast, profile } = useLoaderData<typeof loader>();
+  const { roast, profile, shareBase } = useLoaderData<typeof loader>();
   const actionData = useActionData<typeof action>();
   const { t } = useTranslation(["cupping", "common"]);
   const navigation = useNavigation();
@@ -80,6 +101,8 @@ export default function RoastDetailPage() {
   const [dropWeight, setDropWeight] = useState(roast.dropWeight?.toString() ?? "");
   const [roastedAt, setRoastedAt] = useState(isoToLocalInput(roast.roastedAt));
   const [toast, setToast] = useState("");
+  const [copied, setCopied] = useState(false);
+  const shareUrl = roast.shareToken ? `${shareBase}/r/${roast.shareToken}` : null;
   const developmentRatio = roast.developmentRatio != null
     ? `${(Number(roast.developmentRatio) * 100).toFixed(1)}%`
     : "—";
@@ -100,6 +123,8 @@ export default function RoastDetailPage() {
     if (actionData?.failed) setToast(t("roasts.saveFailed"));
     else if (actionData?.saved) setToast(t("roasts.saved"));
     else if (actionData?.created) setToast(t("roasts.created", { tag: actionData.created }));
+    else if (actionData?.shared) setToast(t("roasts.share.on"));
+    else if (actionData?.unshared) setToast(t("roasts.share.off"));
   }, [actionData, t]);
 
   function save() {
@@ -149,6 +174,51 @@ export default function RoastDetailPage() {
           </Button>
         </Stack>
       </Stack>
+
+      <Card variant="outlined" sx={{ p: { xs: 2, md: 2.5 }, mb: 3 }}>
+        <Stack direction={{ xs: "column", md: "row" }} spacing={2} sx={{ alignItems: { md: "center" } }}>
+          <PublicOutlinedIcon color={shareUrl ? "primary" : "action"} />
+          <Box sx={{ flex: 1, minWidth: 0 }}>
+            <Typography sx={{ fontWeight: 700 }}>
+              {shareUrl ? t("roasts.share.sharedTitle") : t("roasts.share.title")}
+            </Typography>
+            <Typography variant="body2" color="text.secondary">
+              {shareUrl ? t("roasts.share.sharedHint") : t("roasts.share.hint")}
+            </Typography>
+            {shareUrl && (
+              <Stack direction="row" spacing={1} sx={{ mt: 1, alignItems: "center" }}>
+                <Box
+                  component="code"
+                  sx={{ minWidth: 0, flex: 1, overflowX: "auto", whiteSpace: "nowrap", border: 1, borderColor: "divider", borderRadius: 1, px: 1.5, py: 0.75, fontSize: "0.8rem" }}
+                >
+                  {shareUrl}
+                </Box>
+                <IconButton
+                  aria-label={t("roasts.share.copy")}
+                  color={copied ? "success" : "default"}
+                  onClick={() => {
+                    void navigator.clipboard.writeText(shareUrl).then(() => {
+                      setCopied(true);
+                      window.setTimeout(() => setCopied(false), 2000);
+                    });
+                  }}
+                >
+                  {copied ? <CheckIcon /> : <ContentCopyIcon />}
+                </IconButton>
+              </Stack>
+            )}
+          </Box>
+          {shareUrl ? (
+            <Button color="error" disabled={busy} onClick={() => void submit({ intent: "stopSharing" }, { method: "post" })}>
+              {t("roasts.share.stop")}
+            </Button>
+          ) : (
+            <Button variant="outlined" disabled={busy} onClick={() => void submit({ intent: "share" }, { method: "post" })}>
+              {t("roasts.share.start")}
+            </Button>
+          )}
+        </Stack>
+      </Card>
 
       <Box sx={{ display: "grid", gridTemplateColumns: { xs: "1fr", md: "minmax(0, 1fr) minmax(0, 1fr)" }, gap: 3, alignItems: "start" }}>
         <Card sx={{ p: { xs: 2, md: 3 } }}>

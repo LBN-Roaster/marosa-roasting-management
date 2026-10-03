@@ -282,6 +282,49 @@ export type RoastSource = {
   roasterName: string | null;
 };
 
+/** Just the curve: what a chart needs, and all a public roast page may show of the log. */
+export type RoastCurve = {
+  temperatureUnit: "°C" | "°F";
+  points: AlogProfilePoint[];
+  milestones: AlogMilestone[];
+};
+
+/** A shared roast as anyone with the link sees it; fields are null until it is READY. */
+export type PublicRoast = {
+  status: "PROCESSING" | "READY" | "UNAVAILABLE";
+  beanName: string | null;
+  roastedAt: string | null;
+  roasterName: string | null;
+  temperatureUnit: "°C" | "°F" | null;
+  points: AlogProfilePoint[];
+  milestones: AlogMilestone[];
+};
+
+/**
+ * Reads a shared roast without signing in. Returns null for an unknown or
+ * turned-off link. The visitor's address is passed on so the backend's rate
+ * limit applies per visitor rather than to this server as a whole.
+ */
+export async function getPublicRoast(request: Request, token: string) {
+  const visitor =
+    request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ||
+    request.headers.get("x-real-ip") ||
+    "";
+  let response: Response;
+  try {
+    response = await fetch(`${backendOrigin()}/api/public/roasts/${encodeURIComponent(token)}`, {
+      headers: visitor ? { "X-Forwarded-For": visitor } : {},
+    });
+  } catch {
+    throw new Response("The backend service is unavailable.", { status: 503 });
+  }
+  if (response.status === 404) return null;
+  if (!response.ok) {
+    throw new Response("The roast could not be loaded.", { status: response.status });
+  }
+  return (await response.json()) as PublicRoast;
+}
+
 export type RoastLogVisualization = {
   source: RoastSource;
   log: RoastUploadLog;
@@ -376,6 +419,22 @@ export function resolveOrganizations(request: Request) {
   return pending;
 }
 
+/**
+ * The backend's own explanation of a failed call: Spring's `message`, or the
+ * first line of its stack trace when the message is empty.
+ */
+async function backendErrorReason(response: Response) {
+  const text = await response.text().catch(() => "");
+  try {
+    const body = JSON.parse(text) as { message?: string; error?: string; trace?: string };
+    const message = body.message && body.message !== "No message available" ? body.message : null;
+    const exception = body.trace?.split("\n")[0]?.trim();
+    return [message, exception].filter(Boolean).join(" | ") || body.error || "";
+  } catch {
+    return text.slice(0, 300);
+  }
+}
+
 function backendRequest<T>(
   request: Request,
   path: string,
@@ -430,14 +489,20 @@ async function sendBackendRequest<T>(
   if (response.status === 401) {
     throw redirect("/login");
   }
-  if (response.status === 403) {
-    throw new Response("Forbidden.", { status: 403 });
-  }
-  if (response.status === 404) {
-    throw new Response("Not found.", { status: 404 });
-  }
   if (!response.ok) {
-    throw new Response("The backend request failed.", { status: response.status });
+    // This terminal is the only place the backend's reason is visible, so say
+    // which call failed and why before turning it into a generic error page.
+    const reason = await backendErrorReason(response);
+    console.error(
+      `[backend] ${init?.method ?? "GET"} ${path} -> ${response.status}${reason ? `: ${reason}` : ""}`,
+    );
+    const summary =
+      response.status === 403
+        ? "Forbidden."
+        : response.status === 404
+          ? "Not found."
+          : "The backend request failed.";
+    throw new Response(reason ? `${summary} ${reason}` : summary, { status: response.status });
   }
   if (response.status === 204) return undefined as T;
   return response.json() as Promise<T>;
@@ -658,6 +723,8 @@ export type Roaster = {
   capacityKg: number | null;
   location: string | null;
   notes: string | null;
+  /** When on, the roasting app shares each roast publicly with a QR code. */
+  shareRoastsPublicly: boolean;
   controller: { id: string; serialNumber: string } | null;
   status: RoasterStatus;
   /** The latest upload failed or has been stuck too long. */
@@ -690,6 +757,7 @@ export type RoasterPayload = {
   capacityKg: number | null;
   location: string | null;
   notes: string | null;
+  shareRoastsPublicly: boolean;
 };
 
 /** A controller kit as the roastery sees it. */
@@ -1001,6 +1069,8 @@ export type RoastDetail = {
   sampleId: string | null;
   sampleTag: string | null;
   sampleName: string | null;
+  /** The working public link token, when the roast is shared; the page is /r/{token}. */
+  shareToken: string | null;
 };
 
 /** Only the fields a roaster may correct; curve-derived values are read-only. */
@@ -1067,6 +1137,22 @@ export function getRoastProfile(request: Request, roastId: string) {
     request,
     `/api/roasts/${encodeURIComponent(roastId)}/profile`,
   );
+}
+
+/** Turns the roast's public link on, or returns the one already on. */
+export function shareRoast(request: Request, roastId: string) {
+  return backendRequest<{ token: string; sharedAt: string }>(
+    request,
+    `/api/roasts/${encodeURIComponent(roastId)}/share`,
+    { method: "POST" },
+  );
+}
+
+/** Turns the public link off; it never works again. */
+export function stopSharingRoast(request: Request, roastId: string) {
+  return backendRequest<void>(request, `/api/roasts/${encodeURIComponent(roastId)}/share`, {
+    method: "DELETE",
+  });
 }
 
 /** Mints a tagged sample for a roast and links the two in one step. */

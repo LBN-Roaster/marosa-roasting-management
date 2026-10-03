@@ -9,7 +9,7 @@ import { LineChart } from "@mui/x-charts/LineChart";
 import { useDrawingArea, useXScale, useYScale } from "@mui/x-charts/hooks";
 import type { ReactNode } from "react";
 import { useTranslation } from "react-i18next";
-import type { RoastLogVisualization } from "~/lib/backend.server";
+import type { RoastCurve } from "~/lib/backend.server";
 
 export function formatDuration(seconds: number) {
   const rounded = Math.round(Math.abs(seconds));
@@ -42,7 +42,7 @@ const milestoneAbbreviations: Record<string, string> = {
  */
 const shownMilestones = new Set(Object.keys(milestoneAbbreviations));
 
-function shownIn(data: RoastLogVisualization) {
+function shownIn(data: RoastCurve) {
   return data.milestones
     .filter((milestone) => shownMilestones.has(milestone.type))
     .sort((a, b) => a.seconds - b.seconds);
@@ -74,7 +74,7 @@ function segmentHitsRect(segment: Segment, left: number, top: number, right: num
 }
 
 /** SVG callouts share the chart's scales, so they remain anchored on resize. */
-function MilestoneAnnotations({ data }: { data: RoastLogVisualization }) {
+function MilestoneAnnotations({ data }: { data: RoastCurve }) {
   const { t } = useTranslation("common");
   const xScale = useXScale<"linear">();
   const yScale = useYScale<"linear">("temperature");
@@ -205,7 +205,7 @@ export function DetailItem({ label, children }: { label: string; children: React
  * against rate of rise, then the burner, air and drum settings underneath.
  * Shared so the two pages that show a profile cannot drift apart.
  */
-export function RoastProfileChart({ data }: { data: RoastLogVisualization }) {
+export function RoastProfileChart({ data }: { data: RoastCurve }) {
   const { t } = useTranslation(["roastDetail", "common"]);
   const fahrenheit = data.temperatureUnit === "°F";
   const temperatureStep = fahrenheit ? 90 : 50;
@@ -370,7 +370,7 @@ export function RoastMilestones({
   subheader,
   children,
 }: {
-  data: RoastLogVisualization;
+  data: RoastCurve;
   title?: string;
   subheader?: string;
   children?: ReactNode;
@@ -419,7 +419,7 @@ export function RoastMilestones({
 }
 
 /** Chart and milestones together, the way both roast views present them. */
-export function RoastProfile({ data }: { data: RoastLogVisualization }) {
+export function RoastProfile({ data }: { data: RoastCurve }) {
   return (
     <Stack spacing={3}>
       <RoastProfileChart data={data} />

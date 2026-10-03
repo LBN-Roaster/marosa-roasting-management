@@ -3,12 +3,14 @@ import DeleteOutlineIcon from "@mui/icons-material/DeleteOutlined";
 import EditOutlinedIcon from "@mui/icons-material/EditOutlined";
 import LocalFireDepartmentOutlinedIcon from "@mui/icons-material/LocalFireDepartmentOutlined";
 import MemoryOutlinedIcon from "@mui/icons-material/MemoryOutlined";
+import PublicOutlinedIcon from "@mui/icons-material/PublicOutlined";
 import Alert from "@mui/material/Alert";
 import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
 import Card from "@mui/material/Card";
 import Chip from "@mui/material/Chip";
 import Dialog from "@mui/material/Dialog";
+import FormControlLabel from "@mui/material/FormControlLabel";
 import DialogActions from "@mui/material/DialogActions";
 import DialogContent from "@mui/material/DialogContent";
 import DialogContentText from "@mui/material/DialogContentText";
@@ -17,6 +19,7 @@ import IconButton from "@mui/material/IconButton";
 import MenuItem from "@mui/material/MenuItem";
 import Snackbar from "@mui/material/Snackbar";
 import Stack from "@mui/material/Stack";
+import Switch from "@mui/material/Switch";
 import TextField from "@mui/material/TextField";
 import Typography from "@mui/material/Typography";
 import { useEffect, useState } from "react";
@@ -102,6 +105,7 @@ export async function action({ request }: Route.ActionArgs) {
 
 type Draft = {
   id: string | null;
+  shareRoastsPublicly: boolean;
   name: string;
   brand: string;
   model: string;
@@ -110,11 +114,21 @@ type Draft = {
   notes: string;
 };
 
-const emptyDraft: Draft = { id: null, name: "", brand: "", model: "", capacityKg: "", location: "", notes: "" };
+const emptyDraft: Draft = {
+  id: null,
+  shareRoastsPublicly: false,
+  name: "",
+  brand: "",
+  model: "",
+  capacityKg: "",
+  location: "",
+  notes: "",
+};
 
 function draftOf(roaster: Roaster): Draft {
   return {
     id: roaster.id,
+    shareRoastsPublicly: roaster.shareRoastsPublicly,
     name: roaster.name,
     brand: roaster.brand ?? "",
     model: roaster.model ?? "",
@@ -274,9 +288,27 @@ export default function RoastersPage() {
       capacityKg: capacity != null && Number.isFinite(capacity) ? capacity : null,
       location: draft.location.trim() || null,
       notes: draft.notes.trim() || null,
+      shareRoastsPublicly: draft.shareRoastsPublicly,
     };
     void submit(
       { intent: "save", roasterId: draft.id ?? "", payload: JSON.stringify(payload) },
+      { method: "post" },
+    );
+  }
+
+  /** Flips the roaster's public sharing straight from its card, keeping everything else as it is. */
+  function setPublicSharing(roaster: Roaster, shareRoastsPublicly: boolean) {
+    const payload: RoasterPayload = {
+      name: roaster.name,
+      brand: roaster.brand,
+      model: roaster.model,
+      capacityKg: roaster.capacityKg,
+      location: roaster.location,
+      notes: roaster.notes,
+      shareRoastsPublicly,
+    };
+    void submit(
+      { intent: "save", roasterId: roaster.id, payload: JSON.stringify(payload) },
       { method: "post" },
     );
   }
@@ -360,6 +392,9 @@ export default function RoastersPage() {
                 <Stack direction="row" sx={{ mt: 1.5, flexWrap: "wrap", gap: 1, alignItems: "center" }}>
                   <RoasterStatusChip status={roaster.status} />
                   {roaster.uploadProblem && <UploadProblemChip />}
+                  {!canManage && roaster.shareRoastsPublicly && (
+                    <Chip size="small" variant="outlined" icon={<PublicOutlinedIcon />} label={t("roasters.publicSharing.on")} />
+                  )}
                   <Typography variant="caption" color="text.secondary">
                     {roaster.lastRoastAt
                       ? t("roasters.activity.lastRoast", { when: formatWhen(roaster.lastRoastAt, locale) })
@@ -368,6 +403,26 @@ export default function RoastersPage() {
                     {t("roasters.activity.counts", { today: roaster.roastsToday, week: roaster.roastsThisWeek })}
                   </Typography>
                 </Stack>
+
+                {canManage && (
+                  <FormControlLabel
+                    sx={{ mt: 1.5, ml: 0, alignItems: "flex-start" }}
+                    control={
+                      <Switch
+                        size="small"
+                        checked={roaster.shareRoastsPublicly}
+                        disabled={busy}
+                        onChange={(event) => setPublicSharing(roaster, event.target.checked)}
+                      />
+                    }
+                    label={
+                      <Box sx={{ ml: 0.5 }}>
+                        <Typography variant="body2">{t("roasters.publicSharing.label")}</Typography>
+                        <Typography variant="caption" color="text.secondary">{t("roasters.publicSharing.help")}</Typography>
+                      </Box>
+                    }
+                  />
+                )}
 
                 <Stack
                   direction={{ xs: "column", sm: "row" }}
@@ -537,6 +592,21 @@ export default function RoastersPage() {
                   onChange={(event) => setDraft({ ...draft, notes: event.target.value })}
                   multiline
                   minRows={2}
+                />
+                <FormControlLabel
+                  sx={{ ml: 0, alignItems: "flex-start" }}
+                  control={
+                    <Switch
+                      checked={draft.shareRoastsPublicly}
+                      onChange={(event) => setDraft({ ...draft, shareRoastsPublicly: event.target.checked })}
+                    />
+                  }
+                  label={
+                    <Box sx={{ ml: 0.5, mt: 0.75 }}>
+                      <Typography variant="body2">{t("roasters.publicSharing.label")}</Typography>
+                      <Typography variant="caption" color="text.secondary">{t("roasters.publicSharing.help")}</Typography>
+                    </Box>
+                  }
                 />
               </Stack>
             </DialogContent>

@@ -7,6 +7,15 @@ const resources = {
   en: {
     common: {
       navigation: { home: "Inbox", recipes: "Recipes", roasters: "Roasters", roasts: "Roasts", cupping: "Cupping", samples: "Samples", settings: "Settings", admin: "Admin", organization: "Roastery", mainLabel: "Main navigation", mobileLabel: "Mobile navigation" },
+      publicRoast: {
+        eyebrow: "Roast profile",
+        unnamed: "Unnamed roast",
+        noCurve: "The roast curve is not available right now.",
+        footer: "Shared from a roastery using MAROSA.",
+        processing: { title: "Still uploading", body: "This roast is on its way from the roaster. Check back in a few minutes." },
+        unavailable: { title: "Roast not available", body: "This roast could not be read. The roastery has been told about the problem." },
+        notFound: { title: "Link not found", body: "This link does not exist or the roastery has stopped sharing it." },
+      },
       roasters: {
         eyebrow: "Roastery",
         title: "Roasters",
@@ -24,6 +33,11 @@ const resources = {
         noControllers: "No controller kits yet. Turn on the kit, then enter the code it shows with “Add controller”.",
         status: { ACTIVE: "Roasting", IDLE: "Idle", OFFLINE: "Offline", NO_CONTROLLER: "No controller" },
         uploadProblem: "Upload problem",
+        publicSharing: {
+          label: "Share roasts publicly",
+          help: "After each roast, the controller shows a QR code that opens the roast's curve. Turn off to stop new links; existing ones can be stopped on each roast.",
+          on: "Shared publicly",
+        },
         activity: {
           lastRoast: "Last roast {{when}}",
           noRoasts: "No roasts yet",
@@ -665,6 +679,17 @@ const resources = {
         description: "Every roast synced from your roasters. Create a sample from one to tag the bag and send it for cupping.",
         roaster: "Roaster",
         allRoasters: "All roasters",
+        share: {
+          title: "Share publicly",
+          hint: "Anyone with the link can see this roast's curve, bean, date and roaster. Nothing else from your roastery is shown.",
+          sharedTitle: "Shared publicly",
+          sharedHint: "Anyone with this link can see the roast's curve, bean, date and roaster. Stopping breaks the link, printed QR codes included.",
+          start: "Share",
+          stop: "Stop sharing",
+          copy: "Copy link",
+          on: "Public link is on",
+          off: "Public link turned off",
+        },
         unnamed: "No bean name",
         createSample: "Create sample",
         search: "Search by bean, batch, machine or tag",
@@ -1049,6 +1074,15 @@ const resources = {
   vi: {
     common: {
       navigation: { home: "Hộp thư", recipes: "Công thức", roasters: "Máy rang", roasts: "Mẻ rang", cupping: "Thử nếm", samples: "Mẫu", settings: "Cài đặt", admin: "Quản trị", organization: "Nhà rang", mainLabel: "Điều hướng chính", mobileLabel: "Điều hướng trên thiết bị di động" },
+      publicRoast: {
+        eyebrow: "Hồ sơ rang",
+        unnamed: "Mẻ rang chưa đặt tên",
+        noCurve: "Hiện chưa xem được đường cong rang.",
+        footer: "Được chia sẻ từ một nhà rang dùng MAROSA.",
+        processing: { title: "Đang tải lên", body: "Mẻ rang này đang được gửi từ máy rang. Vui lòng quay lại sau vài phút." },
+        unavailable: { title: "Không xem được mẻ rang", body: "Không đọc được dữ liệu mẻ rang này. Nhà rang đã được thông báo về sự cố." },
+        notFound: { title: "Không tìm thấy liên kết", body: "Liên kết không tồn tại hoặc nhà rang đã ngừng chia sẻ." },
+      },
       roasters: {
         eyebrow: "Nhà rang",
         title: "Máy rang",
@@ -1066,6 +1100,11 @@ const resources = {
         noControllers: "Chưa có bộ điều khiển nào. Hãy bật bộ điều khiển, rồi nhập mã hiện trên màn hình bằng nút “Thêm bộ điều khiển”.",
         status: { ACTIVE: "Đang rang", IDLE: "Đang nghỉ", OFFLINE: "Mất kết nối", NO_CONTROLLER: "Chưa có bộ điều khiển" },
         uploadProblem: "Lỗi tải lên",
+        publicSharing: {
+          label: "Chia sẻ mẻ rang công khai",
+          help: "Sau mỗi mẻ rang, bộ điều khiển hiện mã QR mở đường cong của mẻ đó. Tắt để ngừng tạo liên kết mới; liên kết đã có có thể ngừng chia sẻ trên từng mẻ rang.",
+          on: "Đang chia sẻ công khai",
+        },
         activity: {
           lastRoast: "Mẻ gần nhất {{when}}",
           noRoasts: "Chưa có mẻ rang",
@@ -1705,6 +1744,17 @@ const resources = {
         description: "Mọi mẻ rang được đồng bộ từ các máy rang. Tạo mẫu từ một mẻ để dán nhãn lên túi và gửi đi thử nếm.",
         roaster: "Máy rang",
         allRoasters: "Tất cả máy rang",
+        share: {
+          title: "Chia sẻ công khai",
+          hint: "Bất kỳ ai có liên kết đều xem được đường cong, loại hạt, ngày rang và máy rang của mẻ này. Các dữ liệu khác của nhà rang không được hiển thị.",
+          sharedTitle: "Đang chia sẻ công khai",
+          sharedHint: "Bất kỳ ai có liên kết này đều xem được đường cong, loại hạt, ngày rang và máy rang. Ngừng chia sẻ sẽ vô hiệu hóa liên kết, kể cả mã QR đã in.",
+          start: "Chia sẻ",
+          stop: "Ngừng chia sẻ",
+          copy: "Sao chép liên kết",
+          on: "Đã bật liên kết công khai",
+          off: "Đã tắt liên kết công khai",
+        },
         unnamed: "Chưa có tên hạt",
         createSample: "Tạo mẫu",
         search: "Tìm theo hạt, mẻ, máy hoặc mã nhãn",

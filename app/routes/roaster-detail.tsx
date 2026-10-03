@@ -1,8 +1,10 @@
 import ArrowBackIcon from "@mui/icons-material/ArrowBack";
+import PublicOutlinedIcon from "@mui/icons-material/PublicOutlined";
 import Alert from "@mui/material/Alert";
 import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
 import Card from "@mui/material/Card";
+import Chip from "@mui/material/Chip";
 import Divider from "@mui/material/Divider";
 import Stack from "@mui/material/Stack";
 import ToggleButton from "@mui/material/ToggleButton";
@@ -96,6 +98,9 @@ export default function RoasterDetailPage() {
         <Stack direction="row" spacing={1}>
           <RoasterStatusChip status={roaster.status} size="medium" />
           {roaster.uploadProblem && <UploadProblemChip size="medium" />}
+          {roaster.shareRoastsPublicly && (
+            <Chip variant="outlined" icon={<PublicOutlinedIcon />} label={t("roasters.publicSharing.on")} />
+          )}
         </Stack>
       </Stack>
       {specs.length > 0 && (
