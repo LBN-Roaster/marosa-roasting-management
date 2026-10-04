@@ -1,6 +1,6 @@
 import BookOutlinedIcon from "@mui/icons-material/BookOutlined";
 import CloseIcon from "@mui/icons-material/Close";
-import InboxOutlinedIcon from "@mui/icons-material/InboxOutlined";
+import TodayOutlinedIcon from "@mui/icons-material/TodayOutlined";
 import LogoutOutlinedIcon from "@mui/icons-material/LogoutOutlined";
 import MenuIcon from "@mui/icons-material/Menu";
 import CoffeeOutlinedIcon from "@mui/icons-material/CoffeeOutlined";
@@ -29,7 +29,7 @@ import { OrganizationSwitcher, type AppLayoutData } from "~/components/organizat
 import type { GoogleUser } from "~/lib/auth.server";
 
 const navigation = [
-  { to: "/app", labelKey: "navigation.home", icon: InboxOutlinedIcon, end: true, hidden: true },
+  { to: "/app", labelKey: "navigation.home", icon: TodayOutlinedIcon, end: true },
   { to: "/recipes", labelKey: "navigation.recipes", icon: BookOutlinedIcon, hidden: true },
   { to: "/roasters", labelKey: "navigation.roasters", icon: PrecisionManufacturingOutlinedIcon },
   { to: "/roasts", labelKey: "navigation.roasts", icon: LocalFireDepartmentOutlinedIcon },

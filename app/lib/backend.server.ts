@@ -772,6 +772,21 @@ export function getRoasters(request: Request) {
   return backendJson<Roaster[]>(request, "/api/roasters");
 }
 
+type InboxRow<T> = { count: number; items: T[] };
+
+/** The Today page's tasks; a row the caller may not see is null. */
+export type Inbox = {
+  cuppingToScore: InboxRow<{ sessionId: string; name: string; startsAt: string; unscoredSamples: number }> | null;
+  roastsWithoutSample: InboxRow<{ roastId: string; beanName: string | null; roastedAt: string; roasterName: string | null }> | null;
+  roasterProblems: InboxRow<{ roasterId: string; name: string; status: RoasterStatus; uploadProblem: boolean }> | null;
+  unfittedControllers: InboxRow<{ controllerId: string; serialNumber: string }> | null;
+  pendingInvites: InboxRow<{ inviteId: string; email: string; role: OrganizationRole }> | null;
+};
+
+export function getInbox(request: Request) {
+  return backendJson<Inbox>(request, "/api/me/inbox");
+}
+
 export function getRoaster(request: Request, roasterId: string) {
   return backendJson<Roaster>(request, `/api/roasters/${encodeURIComponent(roasterId)}`);
 }

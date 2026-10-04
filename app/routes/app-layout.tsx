@@ -3,7 +3,6 @@ import { ThemeProvider } from "@mui/material/styles";
 import { data, Outlet } from "react-router";
 import { AppShell } from "~/components/app-shell";
 import { RecipeProvider } from "~/contexts/recipe-context";
-import { RoastProvider } from "~/contexts/roast-context";
 import { marosaTheme } from "~/lib/theme";
 import {
   getSessionOrganizationId,
@@ -44,11 +43,9 @@ export default function AppLayout() {
     <ThemeProvider theme={marosaTheme}>
       <CssBaseline />
       <RecipeProvider>
-        <RoastProvider>
-          <AppShell>
-            <Outlet />
-          </AppShell>
-        </RoastProvider>
+        <AppShell>
+          <Outlet />
+        </AppShell>
       </RecipeProvider>
     </ThemeProvider>
   );
