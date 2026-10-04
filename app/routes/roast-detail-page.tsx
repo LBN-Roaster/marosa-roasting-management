@@ -8,6 +8,7 @@ import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
 import Card from "@mui/material/Card";
 import IconButton from "@mui/material/IconButton";
+import InputAdornment from "@mui/material/InputAdornment";
 import Snackbar from "@mui/material/Snackbar";
 import Stack from "@mui/material/Stack";
 import TextField from "@mui/material/TextField";
@@ -26,6 +27,7 @@ import {
   updateRoast,
 } from "~/lib/backend.server";
 import { isoToLocalInput, localToIso } from "~/lib/cupping";
+import { gramsToKgInput, kgInputToGrams } from "~/lib/weight";
 import type { Route } from "./+types/roast-detail-page";
 
 export function meta() {
@@ -97,8 +99,9 @@ export default function RoastDetailPage() {
 
   const [beanName, setBeanName] = useState(roast.beanName ?? "");
   const [batchNumber, setBatchNumber] = useState(roast.batchNumber ?? "");
-  const [chargeWeight, setChargeWeight] = useState(roast.chargeWeight?.toString() ?? "");
-  const [dropWeight, setDropWeight] = useState(roast.dropWeight?.toString() ?? "");
+  // Edited in kg; stored in grams.
+  const [chargeWeight, setChargeWeight] = useState(gramsToKgInput(roast.chargeWeight));
+  const [dropWeight, setDropWeight] = useState(gramsToKgInput(roast.dropWeight));
   const [roastedAt, setRoastedAt] = useState(isoToLocalInput(roast.roastedAt));
   const [toast, setToast] = useState("");
   const [copied, setCopied] = useState(false);
@@ -113,8 +116,8 @@ export default function RoastDetailPage() {
   useEffect(() => {
     setBeanName(roast.beanName ?? "");
     setBatchNumber(roast.batchNumber ?? "");
-    setChargeWeight(roast.chargeWeight?.toString() ?? "");
-    setDropWeight(roast.dropWeight?.toString() ?? "");
+    setChargeWeight(gramsToKgInput(roast.chargeWeight));
+    setDropWeight(gramsToKgInput(roast.dropWeight));
     setRoastedAt(isoToLocalInput(roast.roastedAt));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [roast.id]);
@@ -134,8 +137,8 @@ export default function RoastDetailPage() {
         payload: JSON.stringify({
           beanName: beanName.trim() || null,
           batchNumber: batchNumber.trim() || null,
-          chargeWeight: chargeWeight ? Number(chargeWeight) : null,
-          dropWeight: dropWeight ? Number(dropWeight) : null,
+          chargeWeight: kgInputToGrams(chargeWeight),
+          dropWeight: kgInputToGrams(dropWeight),
           roastedAt: roastedAt ? localToIso(roastedAt) : null,
         }),
       },
@@ -257,7 +260,10 @@ export default function RoastDetailPage() {
                 label={t("roasts.chargeWeight")}
                 value={chargeWeight}
                 onChange={(event) => setChargeWeight(event.target.value)}
-                slotProps={{ htmlInput: { min: 0, step: "0.01" } }}
+                slotProps={{
+                  htmlInput: { min: 0, step: "any" },
+                  input: { endAdornment: <InputAdornment position="end">kg</InputAdornment> },
+                }}
               />
               <TextField
                 fullWidth
@@ -265,7 +271,10 @@ export default function RoastDetailPage() {
                 label={t("roasts.dropWeight")}
                 value={dropWeight}
                 onChange={(event) => setDropWeight(event.target.value)}
-                slotProps={{ htmlInput: { min: 0, step: "0.01" } }}
+                slotProps={{
+                  htmlInput: { min: 0, step: "any" },
+                  input: { endAdornment: <InputAdornment position="end">kg</InputAdornment> },
+                }}
               />
             </Stack>
           </Stack>

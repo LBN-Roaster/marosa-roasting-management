@@ -748,6 +748,8 @@ export type RoasterStats = {
   averageDevelopmentRatio: number | null;
   averageCuppingScore: number | null;
   cuppedRoastCount: number;
+  /** Every local day of the period, oldest first; dropWeight in grams. */
+  daily: { date: string; roastCount: number; dropWeight: number }[];
 };
 
 export type RoasterPayload = {

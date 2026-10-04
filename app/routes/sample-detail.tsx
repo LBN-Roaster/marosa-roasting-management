@@ -20,6 +20,7 @@ import type { SampleRoast } from "~/lib/backend.server";
 import { getSample, linkRoastSample, updateLibrarySample } from "~/lib/backend.server";
 import { sampleFields, sampleTypeOptions, speciesOptions } from "~/lib/cupping-sample-fields";
 import { sampleLabelHtml } from "~/lib/sample-label";
+import { formatWeightInOut } from "~/lib/weight";
 import type { Route } from "./+types/sample-detail";
 
 export function meta() {
@@ -80,7 +81,7 @@ function RoastRow({ roast, locale, onUnlink, busy }: {
 
   const metrics = [
     roast.batchNumber && `${t("library.batch")} ${roast.batchNumber}`,
-    roast.chargeWeight != null && `${roast.chargeWeight} → ${roast.dropWeight ?? "?"}`,
+    formatWeightInOut(roast.chargeWeight, roast.dropWeight, locale),
     roast.developmentRatio != null && `DTR ${(Number(roast.developmentRatio) * 100).toFixed(1)}%`,
     roast.roasterName ?? roast.controllerSerialNumber,
   ].filter(Boolean);

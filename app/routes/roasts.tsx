@@ -25,6 +25,7 @@ import {
 } from "react-router";
 import { PageHeading } from "~/components/page-heading";
 import { createSampleFromRoast, getRoasters, getRoasts } from "~/lib/backend.server";
+import { formatWeightInOut } from "~/lib/weight";
 import type { Route } from "./+types/roasts";
 
 export function meta() {
@@ -158,7 +159,7 @@ export default function RoastsPage() {
           {roasts.content.map((roast) => {
             const metrics = [
               roast.batchNumber && `${t("library.batch")} ${roast.batchNumber}`,
-              roast.chargeWeight != null && `${roast.chargeWeight} → ${roast.dropWeight ?? "?"}`,
+              formatWeightInOut(roast.chargeWeight, roast.dropWeight, locale),
               roast.developmentRatio != null &&
                 `DTR ${(Number(roast.developmentRatio) * 100).toFixed(1)}%`,
               roast.roasterName ?? roast.controllerSerialNumber,
