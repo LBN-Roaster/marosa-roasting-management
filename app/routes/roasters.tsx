@@ -152,6 +152,16 @@ function usePermissions() {
   };
 }
 
+const CLAIM_CODE_LENGTH = 8;
+
+/**
+ * Letters and digits only, upper-cased, at most 8. No native maxLength on the
+ * input: it would cut a pasted "K7QX-M2PA" before the dash is dropped.
+ */
+function claimCodeCharacters(value: string) {
+  return value.toUpperCase().replace(/[^A-Z0-9]/g, "").slice(0, CLAIM_CODE_LENGTH);
+}
+
 /** Takes the code shown on the Pi's screen and links that kit to this roastery. */
 function ClaimControllerDialog({
   open,
@@ -166,6 +176,7 @@ function ClaimControllerDialog({
   const actionData = useActionData<typeof action>();
   const navigation = useNavigation();
   const submit = useSubmit();
+  /** The 8 code characters only; the dash is display. */
   const [code, setCode] = useState("");
   const [fitTo, setFitTo] = useState("");
   const [newRoasterName, setNewRoasterName] = useState("");
@@ -174,7 +185,7 @@ function ClaimControllerDialog({
     fitTo === "new" &&
     roasters.some((roaster) => roaster.name.toLocaleLowerCase() === newRoasterName.trim().toLocaleLowerCase());
   const ready =
-    code.replace(/[^A-Za-z0-9]/g, "").length === 8 &&
+    code.length === CLAIM_CODE_LENGTH &&
     (fitTo !== "new" || (newRoasterName.trim() !== "" && !nameTaken));
   const claimError = actionData?.intent === "claim" ? actionData.error : null;
 
@@ -195,12 +206,12 @@ function ClaimControllerDialog({
           {claimError && <Alert severity="error">{t(`roasters.errors.${claimError}`)}</Alert>}
           <TextField
             label={t("roasters.claim.code")}
-            value={code}
-            onChange={(event) => setCode(event.target.value.toUpperCase())}
+            value={code.length > 4 ? `${code.slice(0, 4)}-${code.slice(4)}` : code}
+            onChange={(event) => setCode(claimCodeCharacters(event.target.value))}
             placeholder="XXXX-XXXX"
             required
             autoFocus
-            slotProps={{ htmlInput: { maxLength: 12, autoCapitalize: "characters", spellCheck: false, style: { fontFamily: "monospace", letterSpacing: "0.15em" } } }}
+            slotProps={{ htmlInput: { autoCapitalize: "characters", autoComplete: "off", spellCheck: false, style: { fontFamily: "monospace", letterSpacing: "0.15em" } } }}
           />
           <TextField
             select
