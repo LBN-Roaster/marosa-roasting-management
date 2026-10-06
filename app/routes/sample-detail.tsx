@@ -80,6 +80,7 @@ function RoastRow({ roast, locale, onUnlink, busy }: {
     .format(new Date(roast.roastedAt));
 
   const metrics = [
+    roast.title && when,
     roast.batchNumber && `${t("library.batch")} ${roast.batchNumber}`,
     formatWeightInOut(roast.chargeWeight, roast.dropWeight, locale),
     roast.developmentRatio != null && `DTR ${(Number(roast.developmentRatio) * 100).toFixed(1)}%`,
@@ -93,7 +94,7 @@ function RoastRow({ roast, locale, onUnlink, busy }: {
           <LocalFireDepartmentOutlinedIcon fontSize="small" color="primary" />
           <Box sx={{ minWidth: 0 }}>
             <Typography variant="body2" sx={{ fontWeight: 700 }}>
-              {when}
+              {roast.title ?? when}
             </Typography>
             <Typography variant="caption" color="text.secondary">
               {metrics.join(" · ") || t("library.noRoastDetails")}

@@ -779,7 +779,7 @@ type InboxRow<T> = { count: number; items: T[] };
 /** The Today page's tasks; a row the caller may not see is null. */
 export type Inbox = {
   cuppingToScore: InboxRow<{ sessionId: string; name: string; startsAt: string; unscoredSamples: number }> | null;
-  roastsWithoutSample: InboxRow<{ roastId: string; beanName: string | null; roastedAt: string; roasterName: string | null }> | null;
+  roastsWithoutSample: InboxRow<{ roastId: string; title: string | null; beanName: string | null; roastedAt: string; roasterName: string | null }> | null;
   roasterProblems: InboxRow<{ roasterId: string; name: string; status: RoasterStatus; uploadProblem: boolean }> | null;
   unfittedControllers: InboxRow<{ controllerId: string; serialNumber: string }> | null;
   pendingInvites: InboxRow<{ inviteId: string; email: string; role: OrganizationRole }> | null;
@@ -1049,6 +1049,8 @@ export function deleteLibrarySample(request: Request, sampleId: string) {
 export type RoastSummary = {
   id: string;
   roastedAt: string;
+  /** The roast's own name (Artisan title), e.g. "A_170926"; the coffee is beanName. */
+  title: string | null;
   beanName: string | null;
   batchNumber: string | null;
   chargeWeight: number | null;
@@ -1067,6 +1069,8 @@ export type RoastSummary = {
 export type RoastDetail = {
   id: string;
   roastedAt: string;
+  /** The roast's own name (Artisan title), e.g. "A_170926"; the coffee is beanName. */
+  title: string | null;
   beanName: string | null;
   batchNumber: string | null;
   chargeWeight: number | null;
@@ -1092,6 +1096,7 @@ export type RoastDetail = {
 
 /** Only the fields a roaster may correct; curve-derived values are read-only. */
 export type RoastPayload = {
+  title: string | null;
   beanName: string | null;
   batchNumber: string | null;
   chargeWeight: number | null;
@@ -1126,6 +1131,8 @@ export function getRoasts(
 export type SampleRoast = {
   id: string;
   roastedAt: string;
+  /** The roast's own name (Artisan title), e.g. "A_170926"; the coffee is beanName. */
+  title: string | null;
   beanName: string | null;
   batchNumber: string | null;
   chargeWeight: number | null;

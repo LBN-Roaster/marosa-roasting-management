@@ -27,6 +27,7 @@ import {
   updateRoast,
 } from "~/lib/backend.server";
 import { isoToLocalInput, localToIso } from "~/lib/cupping";
+import { roastNames } from "~/lib/roast-names";
 import { gramsToKgInput, kgInputToGrams } from "~/lib/weight";
 import type { Route } from "./+types/roast-detail-page";
 
@@ -97,6 +98,8 @@ export default function RoastDetailPage() {
   const submit = useSubmit();
   const busy = navigation.state !== "idle";
 
+  const names = roastNames(roast, t("roasts.unnamed"));
+  const [title, setTitle] = useState(roast.title ?? "");
   const [beanName, setBeanName] = useState(roast.beanName ?? "");
   const [batchNumber, setBatchNumber] = useState(roast.batchNumber ?? "");
   // Edited in kg; stored in grams.
@@ -114,6 +117,7 @@ export default function RoastDetailPage() {
   // object instead would refill these inputs on every revalidation and discard
   // whatever was half-typed.
   useEffect(() => {
+    setTitle(roast.title ?? "");
     setBeanName(roast.beanName ?? "");
     setBatchNumber(roast.batchNumber ?? "");
     setChargeWeight(gramsToKgInput(roast.chargeWeight));
@@ -135,6 +139,7 @@ export default function RoastDetailPage() {
       {
         intent: "save",
         payload: JSON.stringify({
+          title: title.trim() || null,
           beanName: beanName.trim() || null,
           batchNumber: batchNumber.trim() || null,
           chargeWeight: kgInputToGrams(chargeWeight),
@@ -164,9 +169,10 @@ export default function RoastDetailPage() {
       >
         <Box>
           <Typography component="h1" variant="h5" sx={{ fontWeight: 750 }}>
-            {roast.beanName || t("roasts.unnamed")}
+            {names.heading}
           </Typography>
           <Typography variant="body2" color="text.secondary">
+            {names.coffee ? `${names.coffee} · ` : ""}
             {roast.roasterName ?? roast.controllerSerialNumber}
             {roast.sourceRoastId ? ` · ${roast.sourceRoastId}` : ""}
           </Typography>
@@ -230,6 +236,14 @@ export default function RoastDetailPage() {
             {t("roasts.editableHint")}
           </Typography>
           <Stack spacing={2}>
+            <TextField
+              fullWidth
+              label={t("roasts.roastName")}
+              helperText={t("roasts.roastNameHint")}
+              value={title}
+              onChange={(event) => setTitle(event.target.value)}
+              slotProps={{ htmlInput: { maxLength: 255 } }}
+            />
             <TextField
               fullWidth
               label={t("roasts.beanName")}

@@ -21,6 +21,7 @@ import {
   getRoasterUploads,
   getRoasts,
 } from "~/lib/backend.server";
+import { roastNames } from "~/lib/roast-names";
 import { formatWhen, roasteryToday } from "~/lib/roastery-time";
 import { formatKg, formatWeightInOut } from "~/lib/weight";
 import type { Route } from "./+types/roaster-detail";
@@ -311,10 +312,11 @@ export default function RoasterDetailPage() {
               >
                 <Box sx={{ flex: 1, minWidth: 0 }}>
                   <Typography variant="body2" sx={{ fontWeight: 600 }} noWrap>
-                    {roast.beanName || t("roasters.detail.unnamedRoast")}
+                    {roastNames(roast, t("roasters.detail.unnamedRoast")).heading}
                   </Typography>
                   <Typography variant="caption" color="text.secondary">
                     {[
+                      roastNames(roast, t("roasters.detail.unnamedRoast")).coffee,
                       formatWhen(roast.roastedAt, locale),
                       roast.batchNumber,
                       formatWeightInOut(

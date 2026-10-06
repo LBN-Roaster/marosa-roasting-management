@@ -7,9 +7,10 @@ import Stack from "@mui/material/Stack";
 import Typography from "@mui/material/Typography";
 import { LineChart } from "@mui/x-charts/LineChart";
 import { useDrawingArea, useXScale, useYScale } from "@mui/x-charts/hooks";
-import type { ReactNode } from "react";
+import { useMemo, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import type { RoastCurve } from "~/lib/backend.server";
+import { smoothSeries } from "~/lib/ror";
 
 export function formatDuration(seconds: number) {
   const rounded = Math.round(Math.abs(seconds));
@@ -205,8 +206,14 @@ export function DetailItem({ label, children }: { label: string; children: React
  * against rate of rise, then the burner, air and drum settings underneath.
  * Shared so the two pages that show a profile cannot drift apart.
  */
-export function RoastProfileChart({ data }: { data: RoastCurve }) {
+export function RoastProfileChart({ data: recorded }: { data: RoastCurve }) {
   const { t } = useTranslation(["roastDetail", "common"]);
+  // The rate of rise is drawn averaged over a few points so sensor noise does not
+  // hide its trend; temperatures and controls are shown as recorded.
+  const data = useMemo<RoastCurve>(() => {
+    const rateOfRise = smoothSeries(recorded.points.map((point) => point.rateOfRise));
+    return { ...recorded, points: recorded.points.map((point, index) => ({ ...point, rateOfRise: rateOfRise[index] })) };
+  }, [recorded]);
   const fahrenheit = data.temperatureUnit === "°F";
   const temperatureStep = fahrenheit ? 90 : 50;
   const rorStep = fahrenheit ? 9 : 5;

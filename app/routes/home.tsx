@@ -12,6 +12,7 @@ import { Link, useLoaderData } from "react-router";
 import { PageHeading } from "~/components/page-heading";
 import { RoasterStatusChip, UploadProblemChip } from "~/components/roaster-status-chip";
 import { getInbox, getRoasters, getRoasts } from "~/lib/backend.server";
+import { roastNames } from "~/lib/roast-names";
 import { formatWhen } from "~/lib/roastery-time";
 import type { Route } from "./+types/home";
 
@@ -125,8 +126,10 @@ export default function TodayPage() {
       items: inbox.roastsWithoutSample.items.map((roast) => ({
         key: roast.roastId,
         to: `/roasts/${encodeURIComponent(roast.roastId)}`,
-        primary: roast.beanName || t("items.unnamedRoast"),
-        secondary: [formatWhen(roast.roastedAt, locale), roast.roasterName].filter(Boolean).join(" · "),
+        primary: roastNames(roast, t("items.unnamedRoast")).heading,
+        secondary: [roastNames(roast, t("items.unnamedRoast")).coffee, formatWhen(roast.roastedAt, locale), roast.roasterName]
+          .filter(Boolean)
+          .join(" · "),
       })),
     });
   }
@@ -231,10 +234,10 @@ export default function TodayPage() {
                   >
                     <Box sx={{ flex: 1, minWidth: 0 }}>
                       <Typography variant="body2" sx={{ fontWeight: 600 }} noWrap>
-                        {roast.beanName || t("items.unnamedRoast")}
+                        {roastNames(roast, t("items.unnamedRoast")).heading}
                       </Typography>
                       <Typography variant="caption" color="text.secondary">
-                        {[formatWhen(roast.roastedAt, locale), roast.roasterName ?? roast.controllerSerialNumber, roast.sampleTag]
+                        {[roastNames(roast, t("items.unnamedRoast")).coffee, formatWhen(roast.roastedAt, locale), roast.roasterName ?? roast.controllerSerialNumber, roast.sampleTag]
                           .filter(Boolean)
                           .join(" · ")}
                       </Typography>

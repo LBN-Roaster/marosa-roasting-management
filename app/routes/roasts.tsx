@@ -25,6 +25,7 @@ import {
 } from "react-router";
 import { PageHeading } from "~/components/page-heading";
 import { createSampleFromRoast, getRoasters, getRoasts } from "~/lib/backend.server";
+import { roastNames } from "~/lib/roast-names";
 import { formatWeightInOut } from "~/lib/weight";
 import type { Route } from "./+types/roasts";
 
@@ -157,6 +158,7 @@ export default function RoastsPage() {
       {roasts.content.length ? (
         <Stack spacing={1}>
           {roasts.content.map((roast) => {
+            const names = roastNames(roast, t("roasts.unnamed"));
             const metrics = [
               roast.batchNumber && `${t("library.batch")} ${roast.batchNumber}`,
               formatWeightInOut(roast.chargeWeight, roast.dropWeight, locale),
@@ -179,14 +181,17 @@ export default function RoastsPage() {
                         to={`/roasts/${roast.id}`}
                         sx={{ fontWeight: 700, color: "inherit", textDecoration: "none" }}
                       >
-                        {roast.beanName || t("roasts.unnamed")}
+                        {names.heading}
                       </Typography>
                       <Typography variant="caption" color="text.secondary" sx={{ display: "block" }}>
-                        {new Intl.DateTimeFormat(locale, {
-                          dateStyle: "medium",
-                          timeStyle: "short",
-                          hour12: false,
-                        }).format(new Date(roast.roastedAt))}
+                        {[
+                          names.coffee,
+                          new Intl.DateTimeFormat(locale, {
+                            dateStyle: "medium",
+                            timeStyle: "short",
+                            hour12: false,
+                          }).format(new Date(roast.roastedAt)),
+                        ].filter(Boolean).join(" · ")}
                       </Typography>
                       <Typography variant="caption" color="text.secondary">
                         {metrics.join(" · ")}
