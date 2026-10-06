@@ -1,6 +1,5 @@
 import ArrowCircleLeftOutlinedIcon from "@mui/icons-material/ArrowCircleLeftOutlined";
 import LinkOffOutlinedIcon from "@mui/icons-material/LinkOffOutlined";
-import LocalFireDepartmentOutlinedIcon from "@mui/icons-material/LocalFireDepartmentOutlined";
 import LocalPrintshopOutlinedIcon from "@mui/icons-material/LocalPrintshopOutlined";
 import ShowChartIcon from "@mui/icons-material/ShowChart";
 import Alert from "@mui/material/Alert";
@@ -91,13 +90,12 @@ function RoastRow({ roast, locale, onUnlink, busy }: {
   return (
     <Card sx={{ p: 2 }}>
       <Stack direction="row" sx={{ justifyContent: "space-between", alignItems: "center", gap: 2, flexWrap: "wrap" }}>
-        <Stack direction="row" spacing={1.5} sx={{ alignItems: "center", minWidth: 0 }}>
-          <LocalFireDepartmentOutlinedIcon fontSize="small" color="primary" />
+        <Stack direction="row" spacing={1.5} sx={{ alignItems: "flex-start", minWidth: 0 }}>
           <Box sx={{ minWidth: 0 }}>
             <Typography variant="body2" sx={{ fontWeight: 700 }}>
               {roast.title ?? when}
             </Typography>
-            <Typography variant="caption" color="text.secondary">
+            <Typography variant="caption" color="text.secondary" sx={{ display: "block", mt: 0.75 }}>
               {metrics.join(" · ") || t("library.noRoastDetails")}
             </Typography>
           </Box>

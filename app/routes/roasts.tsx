@@ -1,4 +1,3 @@
-import LocalFireDepartmentOutlinedIcon from "@mui/icons-material/LocalFireDepartmentOutlined";
 import SearchIcon from "@mui/icons-material/Search";
 import ShowChartIcon from "@mui/icons-material/ShowChart";
 import Alert from "@mui/material/Alert";
@@ -173,8 +172,7 @@ export default function RoastsPage() {
                   direction="row"
                   sx={{ justifyContent: "space-between", alignItems: "center", gap: 2, flexWrap: "wrap" }}
                 >
-                  <Stack direction="row" spacing={1.5} sx={{ alignItems: "center", minWidth: 0 }}>
-                    <LocalFireDepartmentOutlinedIcon fontSize="small" color="primary" />
+                  <Stack direction="row" spacing={1.5} sx={{ alignItems: "flex-start", minWidth: 0 }}>
                     <Box sx={{ minWidth: 0 }}>
                       <Typography
                         component={Link}
@@ -183,7 +181,7 @@ export default function RoastsPage() {
                       >
                         {names.heading}
                       </Typography>
-                      <Typography variant="caption" color="text.secondary" sx={{ display: "block" }}>
+                      <Typography variant="caption" color="text.secondary" sx={{ display: "block", mt: 0.75 }}>
                         {[
                           names.coffee,
                           new Intl.DateTimeFormat(locale, {

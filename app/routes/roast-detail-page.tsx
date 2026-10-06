@@ -172,7 +172,7 @@ export default function RoastDetailPage() {
           <Typography component="h1" variant="h5" sx={{ fontWeight: 750 }}>
             {names.heading}
           </Typography>
-          <Typography variant="body2" color="text.secondary">
+          <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
             {names.coffee ? `${names.coffee} · ` : ""}
             {roast.roasterName ?? roast.controllerSerialNumber}
             {roast.sourceRoastId ? ` · ${roast.sourceRoastId}` : ""}
@@ -186,47 +186,57 @@ export default function RoastDetailPage() {
       </Stack>
 
       <Card variant="outlined" sx={{ p: { xs: 2, md: 2.5 }, mb: 3 }}>
-        <Stack direction={{ xs: "column", md: "row" }} spacing={2} sx={{ alignItems: { md: "center" } }}>
-          <PublicOutlinedIcon color={shareUrl ? "primary" : "action"} />
+        <Stack direction="row" spacing={2} sx={{ alignItems: "flex-start" }}>
+          <PublicOutlinedIcon color={shareUrl ? "primary" : "action"} sx={{ mt: 0.75 }} />
           <Box sx={{ flex: 1, minWidth: 0 }}>
-            <Stack direction="row" sx={{ alignItems: "center", gap: 0.5 }}>
-              <Typography sx={{ fontWeight: 700 }}>
-                {shareUrl ? t("roasts.share.sharedTitle") : t("roasts.share.title")}
-              </Typography>
-              <InfoTooltip title={shareUrl ? t("roasts.share.sharedHint") : t("roasts.share.hint")} label={t("roasts.share.hintLabel")} />
+            <Stack direction="row" sx={{ alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 1 }}>
+              <Stack direction="row" sx={{ alignItems: "center", gap: 0.5, minHeight: 36 }}>
+                <Typography sx={{ fontWeight: 700 }}>
+                  {shareUrl ? t("roasts.share.sharedTitle") : t("roasts.share.title")}
+                </Typography>
+                <InfoTooltip title={shareUrl ? t("roasts.share.sharedHint") : t("roasts.share.hint")} label={t("roasts.share.hintLabel")} />
+              </Stack>
+              {!shareUrl && (
+                <Button variant="outlined" disabled={busy} onClick={() => void submit({ intent: "share" }, { method: "post" })}>
+                  {t("roasts.share.start")}
+                </Button>
+              )}
             </Stack>
             {shareUrl && (
-              <Stack direction="row" spacing={1} sx={{ mt: 1, alignItems: "center" }}>
-                <Box
-                  component="code"
-                  sx={{ minWidth: 0, flex: 1, overflowX: "auto", whiteSpace: "nowrap", border: 1, borderColor: "divider", borderRadius: 1, px: 1.5, py: 0.75, fontSize: "0.8rem" }}
+              <Stack direction={{ xs: "column", sm: "row" }} spacing={1} sx={{ mt: 1, alignItems: { sm: "center" } }}>
+                <Stack direction="row" spacing={1} sx={{ flex: 1, minWidth: 0, alignItems: "center" }}>
+                  <Box
+                    component="code"
+                    sx={{ minWidth: 0, flex: 1, overflowX: "auto", whiteSpace: "nowrap", border: 1, borderColor: "divider", borderRadius: 1, px: 1.5, py: 0.75, fontSize: "0.8rem" }}
+                  >
+                    {shareUrl}
+                  </Box>
+                  <IconButton
+                    aria-label={t("roasts.share.copy")}
+                    color={copied ? "success" : "default"}
+                    onClick={() => {
+                      void navigator.clipboard.writeText(shareUrl).then(() => {
+                        setCopied(true);
+                        window.setTimeout(() => setCopied(false), 2000);
+                      });
+                    }}
+                  >
+                    {copied ? <CheckIcon /> : <ContentCopyIcon />}
+                  </IconButton>
+                </Stack>
+                <Button
+                  variant="contained"
+                  color="error"
+                  disableElevation
+                  disabled={busy}
+                  onClick={() => void submit({ intent: "stopSharing" }, { method: "post" })}
+                  sx={{ flexShrink: 0 }}
                 >
-                  {shareUrl}
-                </Box>
-                <IconButton
-                  aria-label={t("roasts.share.copy")}
-                  color={copied ? "success" : "default"}
-                  onClick={() => {
-                    void navigator.clipboard.writeText(shareUrl).then(() => {
-                      setCopied(true);
-                      window.setTimeout(() => setCopied(false), 2000);
-                    });
-                  }}
-                >
-                  {copied ? <CheckIcon /> : <ContentCopyIcon />}
-                </IconButton>
+                  {t("roasts.share.stop")}
+                </Button>
               </Stack>
             )}
           </Box>
-          {shareUrl ? (
-            <Button color="error" disabled={busy} onClick={() => void submit({ intent: "stopSharing" }, { method: "post" })}>
-              {t("roasts.share.stop")}
-            </Button>
-          ) : (
-            <Button variant="outlined" disabled={busy} onClick={() => void submit({ intent: "share" }, { method: "post" })}>
-              {t("roasts.share.start")}
-            </Button>
-          )}
         </Stack>
       </Card>
 
