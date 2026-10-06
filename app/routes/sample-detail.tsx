@@ -16,6 +16,7 @@ import Typography from "@mui/material/Typography";
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Link, useActionData, useLoaderData, useNavigation, useSubmit } from "react-router";
+import { InfoTooltip } from "~/components/info-tooltip";
 import type { SampleRoast } from "~/lib/backend.server";
 import { getSample, linkRoastSample, updateLibrarySample } from "~/lib/backend.server";
 import { sampleFields, sampleTypeOptions, speciesOptions } from "~/lib/cupping-sample-fields";
@@ -299,10 +300,10 @@ export default function SampleDetailPage() {
         </Card>
 
         <Box>
-          <Typography sx={{ fontWeight: 700, mb: 1 }}>{t("library.roasts")}</Typography>
-          <Typography variant="body2" color="text.secondary" sx={{ mb: 1.5 }}>
-            {t("library.roastsDescription")}
-          </Typography>
+          <Stack direction="row" sx={{ mb: 1.5, alignItems: "center", gap: 0.5 }}>
+            <Typography sx={{ fontWeight: 700 }}>{t("library.roasts")}</Typography>
+            <InfoTooltip title={t("library.roastsDescription")} />
+          </Stack>
           {sample.roasts.length ? (
             <Stack spacing={1}>
               {sample.roasts.map((roast) => (

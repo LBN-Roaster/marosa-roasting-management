@@ -7,6 +7,7 @@ import DialogActions from "@mui/material/DialogActions";
 import DialogContent from "@mui/material/DialogContent";
 import DialogTitle from "@mui/material/DialogTitle";
 import Snackbar from "@mui/material/Snackbar";
+import InputAdornment from "@mui/material/InputAdornment";
 import Stack from "@mui/material/Stack";
 import Table from "@mui/material/Table";
 import TableBody from "@mui/material/TableBody";
@@ -19,6 +20,7 @@ import Typography from "@mui/material/Typography";
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Form, useActionData, useLoaderData, useNavigation } from "react-router";
+import { InfoTooltip } from "~/components/info-tooltip";
 import { AdminShell } from "~/components/admin-shell";
 import { PageHeading } from "~/components/page-heading";
 import { requireAdmin } from "~/lib/auth.server";
@@ -190,7 +192,7 @@ export default function AdminOrganizationsPage() {
                 type="email"
                 label={t("admin.organizations.ownerEmail")}
                 required
-                helperText={t("admin.organizations.ownerHelp")}
+                slotProps={{ input: { endAdornment: <InputAdornment position="end"><InfoTooltip title={t("admin.organizations.ownerHelp")} /></InputAdornment> } }}
               />
             </Stack>
           </DialogContent>

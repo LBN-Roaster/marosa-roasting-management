@@ -7,6 +7,7 @@ const resources = {
   en: {
     common: {
       navigation: { home: "Today", recipes: "Recipes", roasters: "Roasters", roasts: "Roasts", cupping: "Cupping", samples: "Samples", settings: "Settings", admin: "Admin", organization: "Roastery", mainLabel: "Main navigation", mobileLabel: "Mobile navigation" },
+      moreInfo: "More information",
       publicRoast: {
         eyebrow: "Roast profile",
         unnamed: "No bean name",
@@ -47,6 +48,7 @@ const resources = {
         publicSharing: {
           label: "Share roasts publicly",
           help: "After each roast, the controller shows a QR code that opens the roast's curve. Turn off to stop new links; existing ones can be stopped on each roast.",
+          helpLabel: "About public sharing",
           on: "Shared publicly",
         },
         activity: {
@@ -694,6 +696,7 @@ const resources = {
           hint: "Anyone with the link can see this roast's curve, bean, date and roaster. Nothing else from your roastery is shown.",
           sharedTitle: "Shared publicly",
           sharedHint: "Anyone with this link can see the roast's curve, bean, date and roaster. Stopping breaks the link, printed QR codes included.",
+          hintLabel: "About public sharing",
           start: "Share",
           stop: "Stop sharing",
           copy: "Copy link",
@@ -717,8 +720,10 @@ const resources = {
         profileUnavailable: "The roast curve is not available for this log yet.",
         editable: "Roast details",
         editableHint: "What the roaster entered on the machine. Correct anything that came through wrong.",
-        fromCurve: "From the roast curve",
+        editableHintLabel: "About roast details",
+        fromCurve: "Roast Info",
         fromCurveHint: "Read from the uploaded log, so these always match the profile.",
+        fromCurveHintLabel: "About figures from the curve",
         roastName: "Roast name",
         roastNameHint: "The name this roast was given on the controller, such as a batch code or the profile used.",
         beanName: "Bean name",
@@ -1090,6 +1095,7 @@ const resources = {
   vi: {
     common: {
       navigation: { home: "Hôm nay", recipes: "Công thức", roasters: "Máy rang", roasts: "Mẻ rang", cupping: "Thử nếm", samples: "Mẫu", settings: "Cài đặt", admin: "Quản trị", organization: "Nhà rang", mainLabel: "Điều hướng chính", mobileLabel: "Điều hướng trên thiết bị di động" },
+      moreInfo: "Thêm thông tin",
       publicRoast: {
         eyebrow: "Hồ sơ rang",
         unnamed: "Chưa đặt tên hạt",
@@ -1130,6 +1136,7 @@ const resources = {
         publicSharing: {
           label: "Chia sẻ mẻ rang công khai",
           help: "Sau mỗi mẻ rang, bộ điều khiển hiện mã QR mở đường cong của mẻ đó. Tắt để ngừng tạo liên kết mới; liên kết đã có có thể ngừng chia sẻ trên từng mẻ rang.",
+          helpLabel: "Giải thích về chia sẻ công khai",
           on: "Đang chia sẻ công khai",
         },
         activity: {
@@ -1775,6 +1782,7 @@ const resources = {
           hint: "Bất kỳ ai có liên kết đều xem được đường cong, loại hạt, ngày rang và máy rang của mẻ này. Các dữ liệu khác của nhà rang không được hiển thị.",
           sharedTitle: "Đang chia sẻ công khai",
           sharedHint: "Bất kỳ ai có liên kết này đều xem được đường cong, loại hạt, ngày rang và máy rang. Ngừng chia sẻ sẽ vô hiệu hóa liên kết, kể cả mã QR đã in.",
+          hintLabel: "Giải thích về chia sẻ công khai",
           start: "Chia sẻ",
           stop: "Ngừng chia sẻ",
           copy: "Sao chép liên kết",
@@ -1798,8 +1806,10 @@ const resources = {
         profileUnavailable: "Chưa có đường rang cho nhật ký này.",
         editable: "Thông tin mẻ rang",
         editableHint: "Thông tin người rang nhập trên máy. Sửa lại nếu có gì chưa đúng.",
-        fromCurve: "Từ đường rang",
+        editableHintLabel: "Giải thích về thông tin mẻ rang",
+        fromCurve: "Thông Tin Mẻ rang",
         fromCurveHint: "Đọc từ nhật ký đã tải lên, nên luôn khớp với biểu đồ.",
+        fromCurveHintLabel: "Giải thích về số liệu từ đường rang",
         roastName: "Tên mẻ rang",
         roastNameHint: "Tên đặt cho mẻ rang trên bộ điều khiển, ví dụ mã mẻ hoặc tên hồ sơ rang đã dùng.",
         beanName: "Tên hạt",

@@ -12,6 +12,7 @@ import Typography from "@mui/material/Typography";
 import { Suspense, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import { Await, Link, useFetcher, useLoaderData, useParams } from "react-router";
+import { InfoTooltip } from "~/components/info-tooltip";
 import { AdminShell } from "~/components/admin-shell";
 import { RoastProfile, formatDuration } from "~/components/roast-profile-charts";
 import Alert from "@mui/material/Alert";
@@ -82,8 +83,12 @@ function SampleLink({
   return (
     <Card>
       <CardHeader
-        title={t("common:admin.linkedSample")}
-        subheader={t("common:admin.linkedSampleDescription")}
+        title={
+          <Stack component="span" direction="row" sx={{ alignItems: "center", gap: 0.5 }}>
+            {t("common:admin.linkedSample")}
+            <InfoTooltip title={t("common:admin.linkedSampleDescription")} />
+          </Stack>
+        }
         slotProps={{ title: { variant: "h6" } }}
       />
       <Divider />

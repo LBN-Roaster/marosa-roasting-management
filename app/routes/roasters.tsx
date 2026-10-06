@@ -25,6 +25,7 @@ import Typography from "@mui/material/Typography";
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Link, useActionData, useLoaderData, useNavigation, useRouteLoaderData, useSubmit } from "react-router";
+import { InfoTooltip } from "~/components/info-tooltip";
 import { PageHeading } from "~/components/page-heading";
 import { formatWhen } from "~/lib/roastery-time";
 import { RoasterStatusChip, UploadProblemChip } from "~/components/roaster-status-chip";
@@ -417,7 +418,7 @@ export default function RoastersPage() {
 
                 {canManage && (
                   <FormControlLabel
-                    sx={{ mt: 1.5, ml: 0, alignItems: "flex-start" }}
+                    sx={{ mt: 1.5, ml: 0 }}
                     control={
                       <Switch
                         size="small"
@@ -427,10 +428,10 @@ export default function RoastersPage() {
                       />
                     }
                     label={
-                      <Box sx={{ ml: 0.5 }}>
+                      <Stack direction="row" sx={{ ml: 0.5, alignItems: "center", gap: 0.5 }}>
                         <Typography variant="body2">{t("roasters.publicSharing.label")}</Typography>
-                        <Typography variant="caption" color="text.secondary">{t("roasters.publicSharing.help")}</Typography>
-                      </Box>
+                        <InfoTooltip title={t("roasters.publicSharing.help")} label={t("roasters.publicSharing.helpLabel")} />
+                      </Stack>
                     }
                   />
                 )}
@@ -605,7 +606,7 @@ export default function RoastersPage() {
                   minRows={2}
                 />
                 <FormControlLabel
-                  sx={{ ml: 0, alignItems: "flex-start" }}
+                  sx={{ ml: 0 }}
                   control={
                     <Switch
                       checked={draft.shareRoastsPublicly}
@@ -613,10 +614,10 @@ export default function RoastersPage() {
                     />
                   }
                   label={
-                    <Box sx={{ ml: 0.5, mt: 0.75 }}>
+                    <Stack direction="row" sx={{ ml: 0.5, alignItems: "center", gap: 0.5 }}>
                       <Typography variant="body2">{t("roasters.publicSharing.label")}</Typography>
-                      <Typography variant="caption" color="text.secondary">{t("roasters.publicSharing.help")}</Typography>
-                    </Box>
+                      <InfoTooltip title={t("roasters.publicSharing.help")} label={t("roasters.publicSharing.helpLabel")} />
+                    </Stack>
                   }
                 />
               </Stack>

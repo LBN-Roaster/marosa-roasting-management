@@ -21,6 +21,7 @@ import Typography from "@mui/material/Typography";
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Form, useActionData, useLoaderData, useNavigation, useSubmit } from "react-router";
+import { InfoTooltip } from "~/components/info-tooltip";
 import { PageHeading } from "~/components/page-heading";
 import { useRoleLabel } from "~/components/organization-switcher";
 import { requireUser } from "~/lib/auth.server";
@@ -259,12 +260,12 @@ export default function OrganizationPage() {
 
         {canManage && (
           <Card variant="outlined" sx={{ p: { xs: 2, sm: 3 } }}>
-            <Typography component="h2" variant="h6">
-              {t("organization.invite.title")}
-            </Typography>
-            <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5, mb: 2, maxWidth: 640 }}>
-              {t("organization.invite.description")}
-            </Typography>
+            <Stack direction="row" sx={{ mb: 2, alignItems: "center", gap: 0.5 }}>
+              <Typography component="h2" variant="h6">
+                {t("organization.invite.title")}
+              </Typography>
+              <InfoTooltip title={t("organization.invite.description")} />
+            </Stack>
             <Form method="post">
               <input type="hidden" name="intent" value="invite" />
               <Stack direction={{ xs: "column", md: "row" }} spacing={1.5} sx={{ alignItems: { md: "flex-start" } }}>

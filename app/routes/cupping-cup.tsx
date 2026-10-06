@@ -1,7 +1,6 @@
 import ArrowCircleLeftOutlinedIcon from "@mui/icons-material/ArrowCircleLeftOutlined";
 import CoffeeOutlinedIcon from "@mui/icons-material/CoffeeOutlined";
 import VisibilityOffOutlinedIcon from "@mui/icons-material/VisibilityOffOutlined";
-import HelpOutlineIcon from "@mui/icons-material/HelpOutlined";
 import VisibilityIcon from "@mui/icons-material/Visibility";
 import VisibilityOffIcon from "@mui/icons-material/VisibilityOff";
 import Alert from "@mui/material/Alert";
@@ -21,7 +20,6 @@ import Switch from "@mui/material/Switch";
 import Tab from "@mui/material/Tab";
 import Tabs from "@mui/material/Tabs";
 import TextField from "@mui/material/TextField";
-import Tooltip from "@mui/material/Tooltip";
 import Typography from "@mui/material/Typography";
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
@@ -48,6 +46,7 @@ import {
   type DescriptorAttribute,
   type RoastLevel,
 } from "~/lib/backend.server";
+import { InfoTooltip } from "~/components/info-tooltip";
 import type { Route } from "./+types/cupping-cup";
 
 export function meta() {
@@ -321,14 +320,15 @@ export default function CuppingCupPage() {
                   {sample.sampleName || sample.label}
                 </Typography>
                 {session.blind && !sample.sampleName && (
-                  <Tooltip title={t("cup.blindHint")}>
+                  <Stack direction="row" sx={{ alignItems: "center", gap: 0.25 }}>
                     <Chip
                       size="small"
                       icon={<VisibilityOffOutlinedIcon />}
                       label={t("cup.blind")}
                       sx={{ height: 22 }}
                     />
-                  </Tooltip>
+                    <InfoTooltip title={t("cup.blindHint")} />
+                  </Stack>
                 )}
               </Stack>
               <FormControlLabel
@@ -383,9 +383,7 @@ export default function CuppingCupPage() {
             <Typography variant="body2" sx={{ fontWeight: 700 }}>
               {t("cup.roastLevel")}
             </Typography>
-            <Tooltip title={t("cup.roastLevelHint")}>
-              <HelpOutlineIcon sx={{ fontSize: 16, color: "text.secondary" }} />
-            </Tooltip>
+            <InfoTooltip title={t("cup.roastLevelHint")} />
           </Stack>
           <Box sx={{ display: "grid", gridTemplateColumns: "repeat(5, 1fr)", gap: 1 }}>
             {roastLevels.map((level, index) => {

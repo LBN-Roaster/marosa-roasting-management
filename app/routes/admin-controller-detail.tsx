@@ -34,6 +34,7 @@ import {
   useNavigation,
   useSearchParams,
 } from "react-router";
+import { InfoTooltip } from "~/components/info-tooltip";
 import { AdminShell } from "~/components/admin-shell";
 import { requireAdmin } from "~/lib/auth.server";
 import {
@@ -342,12 +343,10 @@ function LogsCard({
           spacing={2}
           sx={{ justifyContent: "space-between", alignItems: { sm: "center" } }}
         >
-          <Box>
+          <Stack direction="row" sx={{ alignItems: "center", gap: 0.5 }}>
             <Typography variant="h6">{t("admin.uploadedLogs")}</Typography>
-            <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
-              {t("admin.uploadedLogsDescription")}
-            </Typography>
-          </Box>
+            <InfoTooltip title={t("admin.uploadedLogsDescription")} />
+          </Stack>
           <FormControl size="small" sx={{ minWidth: 190 }}>
             <InputLabel id="log-status-filter-label">{t("admin.status")}</InputLabel>
             <Select

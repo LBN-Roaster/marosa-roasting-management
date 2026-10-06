@@ -9,6 +9,7 @@ import { LineChart } from "@mui/x-charts/LineChart";
 import { useDrawingArea, useXScale, useYScale } from "@mui/x-charts/hooks";
 import { useMemo, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
+import { InfoTooltip } from "~/components/info-tooltip";
 import type { RoastCurve } from "~/lib/backend.server";
 import { smoothSeries } from "~/lib/ror";
 
@@ -239,8 +240,12 @@ export function RoastProfileChart({ data: recorded }: { data: RoastCurve }) {
   return (
     <Card>
       <CardHeader
-        title={t("common:admin.roastProfile")}
-        subheader={t("common:admin.roastProfileDescription")}
+        title={
+          <Stack component="span" direction="row" sx={{ alignItems: "center", gap: 0.5 }}>
+            {t("common:admin.roastProfile")}
+            <InfoTooltip title={t("common:admin.roastProfileDescription")} />
+          </Stack>
+        }
         slotProps={{ title: { variant: "h6" } }}
       />
       <Divider />
@@ -375,11 +380,14 @@ export function RoastMilestones({
   data,
   title,
   subheader,
+  titleInfo,
   children,
 }: {
   data: RoastCurve;
   title?: string;
   subheader?: string;
+  /** Shown beside the title, e.g. an InfoTooltip. */
+  titleInfo?: ReactNode;
   children?: ReactNode;
 }) {
   const { t } = useTranslation(["common"]);
@@ -388,7 +396,16 @@ export function RoastMilestones({
   return (
     <Card>
       <CardHeader
-        title={title ?? t("common:admin.milestones")}
+        title={
+          titleInfo ? (
+            <Stack component="span" direction="row" sx={{ alignItems: "center", gap: 0.5 }}>
+              {title ?? t("common:admin.milestones")}
+              {titleInfo}
+            </Stack>
+          ) : (
+            title ?? t("common:admin.milestones")
+          )
+        }
         subheader={subheader}
         slotProps={{ title: { variant: "h6" } }}
       />

@@ -42,6 +42,7 @@ import {
   useNavigation,
   useSearchParams,
 } from "react-router";
+import { InfoTooltip } from "~/components/info-tooltip";
 import { AdminShell } from "~/components/admin-shell";
 import { PageHeading } from "~/components/page-heading";
 import { requireAdmin } from "~/lib/auth.server";
@@ -645,8 +646,12 @@ function RegisterControllerDialog({
               label={t("admin.roastery")}
               value={organizationId}
               onChange={(event) => setOrganizationId(event.target.value)}
-              helperText={t("admin.register.roasteryHelp")}
-              slotProps={{ select: { displayEmpty: true }, inputLabel: { shrink: true } }}
+              slotProps={{
+                select: { displayEmpty: true },
+                inputLabel: { shrink: true },
+                // Clear of the select's dropdown arrow.
+                input: { endAdornment: <InputAdornment position="end" sx={{ mr: 2.5 }}><InfoTooltip title={t("admin.register.roasteryHelp")} /></InputAdornment> },
+              }}
             >
               <MenuItem value="">{t("admin.unlinked")}</MenuItem>
               {organizations.map((organization) => (

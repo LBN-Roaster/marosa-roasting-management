@@ -17,6 +17,7 @@ import Typography from "@mui/material/Typography";
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Link, useActionData, useLoaderData, useNavigation, useSubmit } from "react-router";
+import { InfoTooltip } from "~/components/info-tooltip";
 import { DetailItem, RoastMilestones, RoastProfileChart } from "~/components/roast-profile-charts";
 import {
   createSampleFromRoast,
@@ -188,12 +189,12 @@ export default function RoastDetailPage() {
         <Stack direction={{ xs: "column", md: "row" }} spacing={2} sx={{ alignItems: { md: "center" } }}>
           <PublicOutlinedIcon color={shareUrl ? "primary" : "action"} />
           <Box sx={{ flex: 1, minWidth: 0 }}>
-            <Typography sx={{ fontWeight: 700 }}>
-              {shareUrl ? t("roasts.share.sharedTitle") : t("roasts.share.title")}
-            </Typography>
-            <Typography variant="body2" color="text.secondary">
-              {shareUrl ? t("roasts.share.sharedHint") : t("roasts.share.hint")}
-            </Typography>
+            <Stack direction="row" sx={{ alignItems: "center", gap: 0.5 }}>
+              <Typography sx={{ fontWeight: 700 }}>
+                {shareUrl ? t("roasts.share.sharedTitle") : t("roasts.share.title")}
+              </Typography>
+              <InfoTooltip title={shareUrl ? t("roasts.share.sharedHint") : t("roasts.share.hint")} label={t("roasts.share.hintLabel")} />
+            </Stack>
             {shareUrl && (
               <Stack direction="row" spacing={1} sx={{ mt: 1, alignItems: "center" }}>
                 <Box
@@ -231,25 +232,27 @@ export default function RoastDetailPage() {
 
       <Box sx={{ display: "grid", gridTemplateColumns: { xs: "1fr", md: "minmax(0, 1fr) minmax(0, 1fr)" }, gap: 3, alignItems: "start" }}>
         <Card sx={{ p: { xs: 2, md: 3 } }}>
-          <Typography sx={{ fontWeight: 700 }}>{t("roasts.editable")}</Typography>
-          <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-            {t("roasts.editableHint")}
-          </Typography>
+          <Stack direction="row" sx={{ mb: 2, alignItems: "center", gap: 0.5 }}>
+            <Typography sx={{ fontWeight: 700 }}>{t("roasts.editable")}</Typography>
+            <InfoTooltip title={t("roasts.editableHint")} label={t("roasts.editableHintLabel")} />
+          </Stack>
           <Stack spacing={2}>
             <TextField
               fullWidth
               label={t("roasts.roastName")}
-              helperText={t("roasts.roastNameHint")}
               value={title}
               onChange={(event) => setTitle(event.target.value)}
-              slotProps={{ htmlInput: { maxLength: 255 } }}
+              slotProps={{
+                htmlInput: { maxLength: 255 },
+                input: { endAdornment: <InputAdornment position="end"><InfoTooltip title={t("roasts.roastNameHint")} /></InputAdornment> },
+              }}
             />
             <TextField
               fullWidth
               label={t("roasts.beanName")}
-              helperText={t("roasts.beanNameHint")}
               value={beanName}
               onChange={(event) => setBeanName(event.target.value)}
+              slotProps={{ input: { endAdornment: <InputAdornment position="end"><InfoTooltip title={t("roasts.beanNameHint")} /></InputAdornment> } }}
             />
             <Stack direction={{ xs: "column", sm: "row" }} spacing={2}>
               <TextField
@@ -297,10 +300,10 @@ export default function RoastDetailPage() {
         <Stack spacing={2}>
           {/* With a profile these figures live in the milestones card under the chart. */}
           {!profile && <Card sx={{ p: { xs: 2, md: 3 } }}>
-            <Typography sx={{ fontWeight: 700 }}>{t("roasts.fromCurve")}</Typography>
-            <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-              {t("roasts.fromCurveHint")}
-            </Typography>
+            <Stack direction="row" sx={{ mb: 2, alignItems: "center", gap: 0.5 }}>
+              <Typography sx={{ fontWeight: 700 }}>{t("roasts.fromCurve")}</Typography>
+              <InfoTooltip title={t("roasts.fromCurveHint")} label={t("roasts.fromCurveHintLabel")} />
+            </Stack>
             <Box sx={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 2.5 }}>
               <Metric label={t("roasts.chargeTemperature")} value={roast.chargeTemperature?.toString() ?? "—"} />
               <Metric label={t("roasts.dropTemperature")} value={roast.dropTemperature?.toString() ?? "—"} />
@@ -352,7 +355,11 @@ export default function RoastDetailPage() {
       <Box sx={{ mt: 3 }}>
         {profile ? (
           <Stack spacing={3}>
-            <RoastMilestones data={profile} title={t("roasts.fromCurve")} subheader={t("roasts.fromCurveHint")}>
+            <RoastMilestones
+              data={profile}
+              title={t("roasts.fromCurve")}
+              titleInfo={<InfoTooltip title={t("roasts.fromCurveHint")} label={t("roasts.fromCurveHintLabel")} />}
+            >
               <DetailItem label={t("roasts.development")}>{seconds(roast.developmentSeconds)}</DetailItem>
               <DetailItem label={t("roasts.developmentRatio")}>{developmentRatio}</DetailItem>
             </RoastMilestones>

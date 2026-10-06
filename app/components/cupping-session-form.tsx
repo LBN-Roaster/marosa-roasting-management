@@ -1,6 +1,5 @@
 import ArrowCircleLeftOutlinedIcon from "@mui/icons-material/ArrowCircleLeftOutlined";
 import DeleteOutlineIcon from "@mui/icons-material/DeleteOutlined";
-import HelpOutlineIcon from "@mui/icons-material/HelpOutlined";
 import SearchIcon from "@mui/icons-material/Search";
 import Alert from "@mui/material/Alert";
 import Avatar from "@mui/material/Avatar";
@@ -19,11 +18,11 @@ import Switch from "@mui/material/Switch";
 import TextField from "@mui/material/TextField";
 import ToggleButton from "@mui/material/ToggleButton";
 import ToggleButtonGroup from "@mui/material/ToggleButtonGroup";
-import Tooltip from "@mui/material/Tooltip";
 import Typography from "@mui/material/Typography";
 import { useMemo, useState, type FormEvent, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import { Link } from "react-router";
+import { InfoTooltip } from "~/components/info-tooltip";
 import { PageHeading } from "~/components/page-heading";
 import {
   cuppingProtocols,
@@ -88,9 +87,7 @@ function Field({
           )}
         </Typography>
         {hint && (
-          <Tooltip title={hint}>
-            <HelpOutlineIcon sx={{ fontSize: 16, color: "text.secondary" }} />
-          </Tooltip>
+          <InfoTooltip title={hint} />
         )}
       </Stack>
       {children}
@@ -225,9 +222,7 @@ export function CuppingSessionForm({
             label={
               <Stack direction="row" spacing={0.5} sx={{ alignItems: "center" }}>
                 <Typography variant="body2">{t("form.comboCupping")}</Typography>
-                <Tooltip title={t("form.comboCuppingHint")}>
-                  <HelpOutlineIcon sx={{ fontSize: 16, color: "text.secondary" }} />
-                </Tooltip>
+                <InfoTooltip title={t("form.comboCuppingHint")} />
               </Stack>
             }
           />
@@ -297,9 +292,7 @@ export function CuppingSessionForm({
                 label={
                   <Stack direction="row" spacing={0.5} sx={{ alignItems: "center" }}>
                     <Typography variant="body2">{t("form.customCups")}</Typography>
-                    <Tooltip title={t("form.customCupsHint")}>
-                      <HelpOutlineIcon sx={{ fontSize: 16, color: "text.secondary" }} />
-                    </Tooltip>
+                    <InfoTooltip title={t("form.customCupsHint")} />
                   </Stack>
                 }
               />
@@ -344,9 +337,7 @@ export function CuppingSessionForm({
                     label={
                       <Stack direction="row" spacing={0.5} sx={{ alignItems: "center" }}>
                         <Typography variant="body2">{t("form.blind")}</Typography>
-                        <Tooltip title={t("form.blindHint")}>
-                          <HelpOutlineIcon sx={{ fontSize: 16, color: "text.secondary" }} />
-                        </Tooltip>
+                        <InfoTooltip title={t("form.blindHint")} />
                       </Stack>
                     }
                   />
